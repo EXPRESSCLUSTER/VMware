@@ -437,7 +437,3 @@ On ec1, create block backstore and configure it as backstore for the iSCSI Targe
 - Copy the saved target configuration to the other node
 
 	  # scp /etc/target/saveconfig.json 172.31.255.12:/etc/target/
-
-- Restart *exec-target*
-
-	  # clprsc 
