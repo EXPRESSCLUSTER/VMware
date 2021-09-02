@@ -17,7 +17,7 @@ Configur an HA Cluster of Hypervisor to protect VMs running on VMware.
 
 ## Setting up ESXi - Base
 
-Install vSphere ESXi then set up IP address of Management Network as following.
+Install vSphere ESXi then set up IP address of *Management Network* as following.
 
 - Login to ESXi console > [Configure Management Network] > [IPv4 Configuration] >
 
@@ -58,40 +58,49 @@ Configure NTP servers
     - [Time and date] > [Edit settings]
       - Select [Use Network Time Protocol (enable NTP client)] > Select [Start and stop with host] as [NTP service startup policy] > input IP address of NTP server for the configuring environment as [NTP servers]
 
-To configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as descrived in the Network picture in above, access ESXi#1 (172.31.255.2) and ESXi#2 (172.31.255.3) with terterm/putty, then issue the below commands for both ESXi to configure followings.
-- Configure vSwitch, Physical NICs, Port groups.
-- Disable TSO (TCP Segmentation Offload), LRO (Large Receive Offload) and ATS (Atimic Test and Set) for the case of low iSCSI performance.
-- Configure ESXi to suppress the warning for disabling SSH on vSphere Host Client.
+Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as descrived in the Network picture in above.
 
-	  # Make vSwitch
-	  esxcfg-vswitch --add Mirror_vswitch
-	  esxcfg-vswitch --add iSCSI_vswitch
-	  esxcfg-vswitch --add user_vswitch
-	  # Configure vSwitch to have vmnic
-	  esxcfg-vswitch --link=vmnic1 Mirror_vswitch
-	  esxcfg-vswitch --link=vmnic2 iSCSI_vswitch
-	  esxcfg-vswitch --link=vmnic3 user_vswitch
-	  # Configure port group in vSwitch
-	  esxcfg-vswitch --add-pg=Mirror_portgroup Mirror_vswitch
-	  esxcfg-vswitch --add-pg=iSCSI_portgroup iSCSI_vswitch
-	  esxcfg-vswitch --add-pg=iSCSI_Initiator iSCSI_vswitch
-	  esxcfg-vswitch --add-pg=user_portgroup user_vswitch
-	  # Disabling TSO LRO ATS
-	  esxcli system settings advanced set --option=/Net/UseHwTSO --int-value=0
-	  esxcli system settings advanced set --option=/Net/UseHwTSO6 --int-value=0
-	  esxcli system settings advanced set --option=/Net/TcpipDefLROEnabled --int-value=0
-	  esxcli system settings advanced set --option=/VMFS3/UseATSForHBOnVMFS5 --int-value=0
-	  # Suppress shell warning
-	  esxcli system settings advanced set --option=/UserVars/SuppressShellWarning --int-value=1
+- Open putty/teraterm and connect to ESXi#1 (172.31.255.2) and ESXi#2 (172.31.255.3) then issue the below commands for both ESXi to do the followings.
+  - Configure vSwitch, Physical NICs, Port groups.
+  - Disable TSO (TCP Segmentation Offload), LRO (Large Receive Offload) and ATS (Atimic Test and Set) for the case of low iSCSI performance.
+  - Configure ESXi to suppress the warning for disabling SSH on vSphere Host Client.
+
+	    #!/bin/sh -ue
+
+	    # Make vSwitch
+	    esxcfg-vswitch --add Mirror_vswitch
+	    esxcfg-vswitch --add iSCSI_vswitch
+	    esxcfg-vswitch --add user_vswitch
+
+	    # Configure vSwitch to have vmnic
+	    esxcfg-vswitch --link=vmnic1 Mirror_vswitch
+	    esxcfg-vswitch --link=vmnic2 iSCSI_vswitch
+	    esxcfg-vswitch --link=vmnic3 user_vswitch
+
+	    # Configure vSwitch to have port group
+	    esxcfg-vswitch --add-pg=Mirror_portgroup Mirror_vswitch
+	    esxcfg-vswitch --add-pg=iSCSI_portgroup iSCSI_vswitch
+	    esxcfg-vswitch --add-pg=iSCSI_Initiator iSCSI_vswitch
+	    esxcfg-vswitch --add-pg=user_portgroup user_vswitch
+
+	    # Disabling TSO LRO ATS
+	    esxcli system settings advanced set --option=/Net/UseHwTSO --int-value=0
+	    esxcli system settings advanced set --option=/Net/UseHwTSO6 --int-value=0
+	    esxcli system settings advanced set --option=/Net/TcpipDefLROEnabled --int-value=0
+	    esxcli system settings advanced set --option=/VMFS3/UseATSForHBOnVMFS5 --int-value=0
+
+	    # Suppress shell warning
+	    esxcli system settings advanced set --option=/UserVars/SuppressShellWarning --int-value=1
 
 - Configure VMkernel NIC for iSCSI Initiator
   - for ESXi#1
 
-	    esxcfg-vmknic -a -i 172.31.254.2 -n 255.255.255.0 iSCSI_Initiator
+	    esxcfg-vmknic --add --ip 172.31.254.2 --netmask 255.255.255.0 iSCSI_Initiator
 	    /etc/init.d/hostd restart
 
   - for ESXi#2
 
-	    esxcfg-vmknic -a -i 172.31.254.3 -n 255.255.255.0 iSCSI_Initiator
+	    esxcfg-vmknic --add --ip 172.31.254.3 --netmask 255.255.255.0 iSCSI_Initiator
 	    /etc/init.d/hostd restart
 
+Continue to [Setting up iSCSI Target Cluster on VMware](iSCSI-cluster.md)
