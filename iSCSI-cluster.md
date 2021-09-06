@@ -212,7 +212,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 
 - Installing required packages
 - Disabling firewall and SELinux
-- Making partitions on vHDD (sdb) and formatting
+- Making partitions on vHDD (sdb)
 - Installing the license for EC
 
 	  mkdir /media/CentOS;
@@ -222,7 +222,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 	  systemctl stop firewalld.service; systemctl disable firewalld.service
 	  sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 	  yes no | ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	  parted /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
+	  parted -s /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
 	  rpm -ivh expresscls.*.rpm
 	  clplcnsc -i ECX4.x-*.key
 	  reboot
