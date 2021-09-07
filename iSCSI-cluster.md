@@ -32,6 +32,7 @@
 ## Overall Setup Procedure
 - Creating VMs (ec1 and ec2) on both ESXi, then installing Linux on them.
 - Setting up ECX then iSCSI Target on them.
+- Connecting ESXi iSCSI Initiator to iSCSI Target.
 
 ## Procedure
 
@@ -397,7 +398,9 @@ for md2 do the same like md1 by using
 - Reboot ec1, ec2 and wait for the completion of starting of the cluster *failover-vm*
 
 
-### Obtaining IQN for iSCSI Software Adapter on **ESXi#1 and 2**.
+### Configuring iSCSI Target
+
+#### Obtaining IQN for iSCSI Software Adapter on **ESXi#1 and 2**.
 
 On the client PC, download [plink.exe](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html)
 Open cmd.exe > Issue the plink command like follows. You need to understand the IP address of the ESXi#1 and 2, and root password, in the folloing sample 172.31.255.2, 172.31.255.3 and PASSWORD
@@ -433,7 +436,7 @@ Then you will see the **IQN of iSCSI Initiator on ESXi#1 and 2** as follows like
 
 These are used as *IQN of iSCSI Initiator* in the next section to configure iSCSI Target.
 
-### Configuring iSCSI Target
+#### Configuring iSCSI Target on **ec1 and 2**
 
 On ec1, create block backstore and configure it as backstore for the iSCSI Target.
 - Login to the console of ec1
@@ -476,3 +479,83 @@ On ec1, create block backstore and configure it as backstore for the iSCSI Targe
 - Copy the saved target configuration to the other node
 
 	  # scp /etc/target/saveconfig.json 172.31.255.12:/etc/target/
+
+### Connecting ESXi iSCSI Initiator to iSCSI Target
+
+Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
+
+- on ESXi#1
+
+	  #!/bin/sh -eu
+
+	  # IP Addresss(FIP):Port for iSCSI Target
+	  ADDR='172.31.254.10:3260'
+
+	  # Enabling iSCSI Initiator
+	  esxcli iscsi software set --enabled=true
+	  echo [D] [$?] esxcli iscsi software set --enabled=true
+
+	  # Finding vmhba for iSCSI Software Adapter
+	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	  echo [D] [$?] VMHBA = [${VMHBA}]
+
+	  # Discovering iSCSI Target 
+	  esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
+	  echo [D] [$?] esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
+
+	  # Scanning iSCSI Software Adapter
+	  esxcli storage core adapter rescan --adapter=${VMHBA}
+	  echo [D] [$?] esxcli storage core adapter rescan --adapter=${VMHBA}
+
+	  #
+	  # The following portion creates new datastore on ECX virtual-iSCSI-shared disk.
+	  # This need to be done on either of ESXi
+	  #
+	
+	  # Finding LIO iSCSI device
+	  DEVICE=`esxcli storage core device list | grep "Display Name: LIO-ORG" | sed -r 's/^.*\((.*)\)/\1/'`
+	  echo [D] [$?] DEVICE = [${DEVICE]
+
+	  # Calculating end of sectors
+	  END_SECTOR=$(eval expr $(partedUtil getptbl /vmfs/devices/disks/${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
+	  echo [D] [$?] END_SECTOR = [${END_SECTOR]
+
+	  # Createing partition
+	  partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
+	  echo [D] [$?] partedUtil
+
+	  # Formatting the partition
+	  vmkfstools --createfs vmfs6 -S iSCSI /vmfs/devices/disks/${DEVICE}:1
+	  echo [D] [$?] vmkfstools
+
+- On ESXi#2
+
+	  #!/bin/sh -eu
+
+	  # IP Addresss(FIP):Port for iSCSI Target
+	  ADDR='172.31.254.10:3260'
+
+	  # Enabling iSCSI Initiator
+	  esxcli iscsi software set --enabled=true
+	  echo [D] [$?] esxcli iscsi software set --enabled=true
+
+	  # Finding vmhba for iSCSI Software Adapter
+	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	  echo [D] [$?] VMHBA = [${VMHBA}]
+
+	  # Discovering iSCSI Target 
+	  esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
+	  echo [D] [$?] esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
+
+	  # Scanning iSCSI Software Adapter
+	  esxcli storage core adapter rescan --adapter=${VMHBA}
+	  echo [D] [$?] esxcli storage core adapter rescan --adapter=${VMHBA}
+
+Reference:
+[[1](https://kb.vmware.com/s/article/1036609)]
+[[2](https://www.virten.net/2015/10/usb-devices-as-vmfs-datastore-in-vsphere-esxi-6-0/)]
+
+
+Now the setup of HCI is completed for two ESXi boxes having a virtual shared disk made of Software-Defined Storage by ECX.
+
+[Continue to deploying VMs to be protected.]()
