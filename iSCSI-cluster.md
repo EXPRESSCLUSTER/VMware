@@ -215,6 +215,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 - Disabling firewall, SELinux and dnf-makecache
 - Making partitions on vHDD (sdb)
 - Installing EC and its license
+- Making ssh key and configuring password free access from EC VMs to ESXi hosts
 
 	  mkdir /media/CentOS
 	  mount /dev/cdrom /media/CentOS
@@ -222,11 +223,26 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 	  umount /media/CentOS
 	  systemctl disable firewalld.service; systemctl disable dnf-makecache.timer
 	  sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
-	  yes no | ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
 	  parted -s /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
 	  rpm -ivh expresscls.*.rpm
 	  clplcnsc -i ECX4.x-*.key
+
+	  # Configuring SSH
+	  yes no | ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
+	  scp ~/.ssh/id_rsa.pub 172.31.255.2:/etc/ssh/keys-root/$HOSTNAME
+	  scp ~/.ssh/id_rsa.pub 172.31.255.3:/etc/ssh/keys-root/$HOSTNAME
+
 	  reboot
+
+On ESX#1 and 2 shell console, issue the following commands to add the ec1 and 2 keys to authorized_keys.
+
+	cd /etc/ssh/keys-root
+	cat ec1 ec2 >> authorized_keys
+
+On ec1 and 2 console, confirm the ssh login from ec1 to ESXi#1 and 2 is possible without password, and confirm the same for ec2.
+
+	ssh 172.31.255.2
+	ssh 172.31.255.3
 
 ### Configuring EC
 
