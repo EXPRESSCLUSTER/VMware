@@ -26,8 +26,6 @@
 | MD - Data Partition			| /dev/sdb2			| <-- |
 | FIP for iSCSI Target			| 172.31.254.10			| <-- |
 | WWN for iSCSI Target			| iqn.1996-10.com.ec		| <-- |
-| WWN for ESXi#1 iSCSI Initiator	| iqn.1998-01.com.vmware:1	| <-- |
-| WWN for ESXi#2 iSCSI Initiator	| iqn.1998-01.com.vmware:2	| <-- |
 
 ## Overall Setup Procedure
 - Creating VMs (ec1 and ec2) on both ESXi, then installing Linux on them.
