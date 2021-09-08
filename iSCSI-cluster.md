@@ -218,7 +218,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 - Making partitions on vHDD (sdb)
 - Installing EC and its license
 
-	  mkdir /media/CentOS;
+	  mkdir /media/CentOS
 	  mount /dev/cdrom /media/CentOS
 	  yum --disablerepo=* --enablerepo=c8-media-BaseOS,c8-media-AppStream install -y targetcli target-restore perl
 	  umount /media/CentOS
@@ -482,6 +482,8 @@ On ec1, create block backstore and configure it as backstore for the iSCSI Targe
 
 ### Connecting ESXi iSCSI Initiator to iSCSI Target
 
+This procedure also mount the iSCSI Target as EC_iSCSI datastore and format it with VMFS6 file system.
+
 Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 
 - on ESXi#1
@@ -524,8 +526,8 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
 	  echo [D] [$?] partedUtil
 
-	  # Formatting the partition
-	  vmkfstools --createfs vmfs6 -S iSCSI /vmfs/devices/disks/${DEVICE}:1
+	  # Formatting the partition and mount it as EC_iSCSI datastore
+	  vmkfstools --createfs vmfs6 -S EC_iSCSI /vmfs/devices/disks/${DEVICE}:1
 	  echo [D] [$?] vmkfstools
 
 - On ESXi#2
