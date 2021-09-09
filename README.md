@@ -92,15 +92,17 @@ Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as descrived 
 	    # Suppress shell warning
 	    esxcli system settings advanced set --option=/UserVars/SuppressShellWarning --int-value=1
 
-- Configure VMkernel NIC for iSCSI Initiator
+- Configure VMkernel NIC for iSCSI Initiator and enable iSCSI Software Adapter
   - for ESXi#1
 
 	    esxcfg-vmknic --add --ip 172.31.254.2 --netmask 255.255.255.0 iSCSI_Initiator
+	    esxcli iscsi software set --enabled=true
 	    /etc/init.d/hostd restart
 
   - for ESXi#2
 
 	    esxcfg-vmknic --add --ip 172.31.254.3 --netmask 255.255.255.0 iSCSI_Initiator
+	    esxcli iscsi software set --enabled=true
 	    /etc/init.d/hostd restart
 
 Continue to [Setting up iSCSI Target Cluster on VMware](iSCSI-cluster.md)
