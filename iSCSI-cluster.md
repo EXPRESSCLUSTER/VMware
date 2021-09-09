@@ -411,36 +411,17 @@ This resource is enabling more automated MD recovery by supposing the node which
 
 #### Obtaining IQN for iSCSI Software Adapter on **ESXi#1 and 2**.
 
-On the client PC, download [plink.exe](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html)
-Open cmd.exe > Issue the plink command like follows. You need to understand the IP address of the ESXi#1 and 2, and root password, in the folloing sample 172.31.255.2, 172.31.255.3 and PASSWORD
+Login to the ESXi#1 and 2 console shell by Putty/Teraterm > Run the below commands.
 
-	plink root@172.31.255.2 -pw PASSWORD -no-antispoof "VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`;esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'
+On ESXi#1 and 2
+
+	VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'
 	
-	plink root@172.31.255.3 -pw PASSWORD -no-antispoof "VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`;esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'
+Then the **IQN of iSCSI Initiator on ESXi#1 and 2** are output as follows likely. In this sample `iqn.1998-01.com.vmware:localhost:1983516280:65` is IQN of ESXi#1 and `iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65`is IQN of ESXi#2.
 
-On the execution of `plink` command, you might see the following. Answer `y` in the case.
-
-	The server's host key is not cached in the registry. You
-	have no guarantee that the server is the computer you
-	think it is.
-	The server's ecdsa-sha2-nistp256 key fingerprint is:
-	ecdsa-sha2-nistp256 256 29:c9:7e:cf:fc:af:25:0c:14:be:70:9b:b6:06:5a:e8
-	If you trust this host, enter "y" to add the key to
-	PuTTY's cache and carry on connecting.
-	If you want to carry on connecting just once, without
-	adding the key to the cache, enter "n".
-	If you do not trust this host, press Return to abandon the
-	connection.
-	Store key in cache? (y/n)
-
-Then you will see the **IQN of iSCSI Initiator on ESXi#1 and 2** as follows likely. In this sample `iqn.1998-01.com.vmware:localhost:1983516280:65` is IQN of ESXi#1 and `iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65`is IQN of ESXi#2.
-
-	Keyboard-interactive authentication prompts from server:
-	End of keyboard-interactive prompts from server
 	iqn.1998-01.com.vmware:localhost:1983516280:65
 
-	Keyboard-interactive authentication prompts from server:
-	End of keyboard-interactive prompts from server
 	iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65
 
 These are used as *IQN of iSCSI Initiator* in the next section to configure iSCSI Target.
