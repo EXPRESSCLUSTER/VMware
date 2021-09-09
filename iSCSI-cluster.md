@@ -502,10 +502,6 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  # IP Addresss(FIP):Port for iSCSI Target
 	  ADDR='172.31.254.10:3260'
 
-	  # Enabling iSCSI Initiator
-	  esxcli iscsi software set --enabled=true
-	  echo [D] [$?] esxcli iscsi software set --enabled=true
-
 	  # Finding vmhba for iSCSI Software Adapter
 	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
 	  echo [D] [$?] VMHBA = [${VMHBA}]
@@ -545,10 +541,6 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 
 	  # IP Addresss(FIP):Port for iSCSI Target
 	  ADDR='172.31.254.10:3260'
-
-	  # Enabling iSCSI Initiator
-	  esxcli iscsi software set --enabled=true
-	  echo [D] [$?] esxcli iscsi software set --enabled=true
 
 	  # Finding vmhba for iSCSI Software Adapter
 	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
