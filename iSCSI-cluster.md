@@ -542,4 +542,4 @@ Reference:
 
 Now the setup of HCI is completed for two ESXi boxes having a virtual shared disk made of Software-Defined Storage by ECX.
 
-[Continue to deploying VMs to be protected.]()
+Continue to [deploying VMs to be protected](VM-add.md).
