@@ -521,11 +521,11 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	
 	  # Finding LIO iSCSI device
 	  DEVICE=`esxcli storage core device list | grep "Display Name: LIO-ORG" | sed -r 's/^.*\((.*)\)/\1/'`
-	  echo [D] [$?] DEVICE = [${DEVICE]
+	  echo [D] [$?] DEVICE = [${DEVICE}]
 
 	  # Calculating end of sectors
 	  END_SECTOR=$(eval expr $(partedUtil getptbl /vmfs/devices/disks/${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
-	  echo [D] [$?] END_SECTOR = [${END_SECTOR]
+	  echo [D] [$?] END_SECTOR = [${END_SECTOR}]
 
 	  # Createing partition
 	  partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
