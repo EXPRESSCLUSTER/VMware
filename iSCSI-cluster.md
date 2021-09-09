@@ -305,11 +305,6 @@ This resource is enabling more automated MD recovery by supposing the node which
 	- */dev/sdb1* as [Cluster Partition Device Name]
 - [Finish]
 
-for md2 do the same like md1 by using
-  - *md2* as [Name]
-  - */dev/sdc2* as [Data Partition Device Name] 
-  - */dev/sdc1* as [Cluster Partition Device Name]
-
 #### Adding the execute resource for controlling target service
 - Click [Add resource] button in right side of [failover-vm]
 - Select [EXEC resource] as [Type] > set *exec-target* as [Name] > [Next]
