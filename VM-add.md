@@ -31,8 +31,9 @@ This resource is controlling start/stop VM
 	- overwrite `%%VMK2%%`      by the IP address of ESXi#2 such as `172.31.255.3`
 	- overwrite `%%EC1%%`       by the IP address of ec1 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.11`
 	- overwrite `%%EC2%%`       by the IP address of ec2 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.12`
+	- [OK]
 
-- Select stop.sh > [Replace] > Select [*vm-stop.pl*] > [Edit] just same as start.sh
+- Select stop.sh > [Replace] > Select [*vm-stop.pl*] > [Edit] just same as start.sh > [OK]
 - [Tuning] > [Maintenance] tab > input */opt/nec/clusterpro/log/exec-[VMNAME].log* as [Log Output Path] such as `/opt/nec/clusterpro/log/exec-VM1.log` > check [Rotate Log] > [OK]
 - [Finish]
 
@@ -41,16 +42,17 @@ This resource is controlling start/stop VM
 - [Add monitor resource] at the right side of [Monitors]
 - select [Custom monitor] as [Type] > input `genw-[VMNAME]` as [Name] > [Next]
 
-	- select [Active] as [Monitor Timing] > [Browse] > select `exec-[VMNAME]` > [OK] > [Next]
-	- [Replace] > select [genw-vm.pl] > [Open] > [Edit] > edit the parameter in the script
+- select [Active] as [Monitor Timing] > [Browse] > select `exec-[VMNAME]` > [OK] > [Next]
+- [Replace] > select [genw-vm.pl] > [Open] > [Edit] > edit the parameter in the script
 
-		- overwrite `%%VMX%%`       by the path to VM configuration file such as `/vmfs/volumes/EC_iSCSI/vm1/vm1.vmx`
-		- overwrite `%%VMK1%%`      by the IP address of ESXi#1 such as `172.31.255.2`
-		- overwrite `%%VMK2%%`      by the IP address of ESXi#2 such as `172.31.255.3`
-		- overwrite `%%EC1%%`       by the IP address of ec1 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.11`
-		- overwrite `%%EC2%%`       by the IP address of ec2 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.12`
+	- overwrite `%%VMX%%`       by the path to VM configuration file such as `/vmfs/volumes/EC_iSCSI/vm1/vm1.vmx`
+	- overwrite `%%VMK1%%`      by the IP address of ESXi#1 such as `172.31.255.2`
+	- overwrite `%%VMK2%%`      by the IP address of ESXi#2 such as `172.31.255.3`
+	- overwrite `%%EC1%%`       by the IP address of ec1 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.11`
+	- overwrite `%%EC2%%`       by the IP address of ec2 which have the same network addres with %%VMK1%% and %%VMK2%% such as `172.31.255.12`
+	- [OK]
 
-	- Input `/opt/nec/clusterpro/log/genw-[VMNAME].log` as [Log Output Paht] > check [Rotate Log] > [Next]
-	- select [Executing failover to the recovery target] as [Recoverty Action] > [Browse] >  select [failvoer-vm] > [OK] > [Finish]
+- Input `/opt/nec/clusterpro/log/genw-[VMNAME].log` as [Log Output Path] > check [Rotate Log] > [Next]
+- select [Executing failover to the recovery target] as [Recoverty Action] > [Browse] >  select [failvoer-vm] > [OK] > [Finish]
 
-- [Apply the Configuration File]
+- [Apply the Configuration File] > [OK] > [OK] > [OK]
