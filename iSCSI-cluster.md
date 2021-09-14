@@ -449,7 +449,7 @@ Login to the console of ec1, and issue the following commands. On the execution,
 	targetcli /iscsi create iqn.1996-10.com.ecx
 
 	# Assigning LUN to IQN
-	targetcli /iscsi/iqn.1996-10.com.ec/tpg1/luns create /backstores/block/idisk1
+	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/luns create /backstores/block/idisk1
 
 	# Allow ESXi#1 and 2 (*IQN of iSCSI Initiator*) to scan the iSCSI target
 
