@@ -253,7 +253,7 @@ On the client PC,
 - Configure the cluster which have no failover-group.
 
 	- [Cluster generation wizard]
-	- Input *HCI-Cluster* as [Cluster name], [English] as Language > [Next]
+	- Input *HCI-Cluster* as [Cluster Name], [English] as Language > [Next]
 	- [Add] > input *172.31.255.12* as [Server Name or IP Address] of secondary server > [OK]
 	- Confirm *ec2* was added > [Next]
 	- Configure Interconnect
@@ -271,7 +271,7 @@ On the client PC,
 - [Timeout] tab > Set [Timeout] as *50* sec
 
 #### Enabling primary node surviving on the dual-active detection
-- [Recovery] tab > [Detail Config] in right hand of [Disable Shutdown When Multi-Failover-Service Detected] 
+- [Recovery] tab > [Detailed Settings] in right hand of [Disable Shutdown When Multi-Failover-Service Detected] 
 - Check [ec1] > [OK]
 - [OK]
 
@@ -310,7 +310,7 @@ This resource is enabling more automated MD recovery by supposing the node which
 - Select [EXEC resource] as [Type] > set *exec-target* as [Name] > [Next]
 - [Next]
 - [Next]
-- Select start.sh then click [Edit]
+- Select start.sh > [Edit]
   - Change the tail of the script as below.
 
 		echo "Starting iSCSI Target"
@@ -318,13 +318,16 @@ This resource is enabling more automated MD recovery by supposing the node which
 		echo "Started  iSCSI Target ($?)"
 		exit 0
 
-- Select stop.sh then click [Edit]
+  - [OK]
+- Select stop.sh > [Edit]
   - Change the tail of the script as below.
 
 		echo "Stopping iSCSI Target"
 		systemctl stop target
 		echo "Stopped  iSCSI Target ($?)"
 		exit 0
+
+  - [OK]
 - [Tuning] > [Maintenance] tab > input `/opt/nec/clusterpro/log/exec-target.log` as [Log Output Path] > check [Rotate Log] > [OK]
 - [Finish]
 
@@ -337,7 +340,7 @@ This resource is enabling more automated MD recovery by supposing the node which
 - Click [Finish]
 
 #### Adding the first custom monitor resource for automatic MD recovery
-- Click [Add monitor Resource] button in right side of [Monitors]
+- Click [Add monitor resource] button in right side of [Monitors]
   - [Info] section
   	- select [Custom monitor] as [Type] > input *genw-md* as [Name] > [Next]
   - [Monitor (common)] section
@@ -359,9 +362,9 @@ This resource is enabling more automated MD recovery by supposing the node which
 
 
 #### Adding the second custom monitor resource for keeping remote EC VM and EC as online.
-- Click [Add monitor Resource] button in right side of [Monitors]
+- Click [Add monitor resource] button in right side of [Monitors]
   - [Info] section
-  	- select [Custom monitor] as [type] > input *genw-remote-node* as [Name]> [Next]
+  	- select [Custom monitor] as [Type] > input *genw-remote-node* as [Name]> [Next]
   - [Monitor (common)] section
   	- select [Always] as [Monitor Timing]
 	- [Next]
@@ -375,6 +378,7 @@ This resource is enabling more automated MD recovery by supposing the node which
 		- write `$VMIP2 = "172.31.255.12"` as IP address of ec2
 		- write `$VMK1 = "172.31.255.2"` as IP address of esxi1 accessing from ec1
 		- write `$VMK2 = "172.31.255.3"` as IP address of esxi2 accessing from ec2
+		- [OK]
 	- input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log] > [Next]
   - [Recovery Action] section
   	- select [Execute only the final action] as [Recovery Action]
@@ -383,9 +387,9 @@ This resource is enabling more automated MD recovery by supposing the node which
 	- select [No operation] as [Final Action] > [Finish]
 
 #### Adding the third custom monitor resource for updating arp table
-- Click [Add monitor Resource] button in right side of [Monitors]
+- Click [Add monitor resource] button in right side of [Monitors]
   - [Info] section
-  	- select [Custom monitor] as [type] > input *genw-arpTable* as[Name] > [Next]
+  	- select [Custom monitor] as [type] > input *genw-arpTable* as [Name] > [Next]
   - [Monitor (common)] section
   	- input *30* as [Interval]
 	- select [Active] as [Monitor Timing]
@@ -395,7 +399,7 @@ This resource is enabling more automated MD recovery by supposing the node which
   - [Monitor (special)] section
   	- [Replace]
 		- select *genw-arpTable.sh* > [Open] > [Yes]
-	- input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Paht] > check [Rotate Log] > [Next]
+	- input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Path] > check [Rotate Log] > [Next]
   - [Recovery Action] section
   	- select [Execute only the final action] as [Recovery Action]
 	- [Browse]
@@ -403,7 +407,7 @@ This resource is enabling more automated MD recovery by supposing the node which
 	- select [No operation] as [Final Action] > [Finish]
 
 #### Applying the configuration
-- Click [Apply the Configuration File]
+- Click [Apply the Configuration File] > [OK] > [OK] > [OK]
 - Reboot ec1, ec2 and wait for the completion of starting of the cluster *failover-vm*
 
 ### Configuring iSCSI Target on **ec1 and 2**
@@ -424,10 +428,10 @@ Login to the console of ec1, and issue the following commands. On the execution,
 
 	#
 	#----
-	VMHBA=`ssh $VMK1 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-	 IQN1=`ssh $VMK1 esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'`
-	VMHBA=`ssh $VMK2 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-	 IQN2=`ssh $VMK2 esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'`
+	VMHBA1=`ssh $VMK1 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	VMHBA2=`ssh $VMK2 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	IQN1=`ssh $VMK1 esxcli iscsi adapter get --adapter=$VMHBA1 | grep '   Name:' | sed -r 's/[^:]*: //'`
+	IQN2=`ssh $VMK2 esxcli iscsi adapter get --adapter=$VMHBA2 | grep '   Name:' | sed -r 's/[^:]*: //'`
 
 	if [ -z "$IQN1" ]; then
 		echo [E] IQN of ESXi1 not found.; exit 1
