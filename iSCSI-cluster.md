@@ -406,69 +406,54 @@ This resource is enabling more automated MD recovery by supposing the node which
 - Click [Apply the Configuration File]
 - Reboot ec1, ec2 and wait for the completion of starting of the cluster *failover-vm*
 
+### Configuring iSCSI Target on **ec1 and 2**
 
-### Configuring iSCSI Target
+On ec1, create block backstore on NMP1 and configure it as backstore for the iSCSI Target.
 
-#### Obtaining IQN for iSCSI Software Adapter on **ESXi#1 and 2**.
+Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP ddress of ESXi#1 and 2.
 
-Login to the ESXi#1 and 2 console shell by Putty/Teraterm > Run the below commands.
+	#!/bin/sh -eu
 
-On ESXi#1 and 2
+	# Parameters
+	# IP address of ESXi#1 and 2
+	VMK1=172.31.255.2
+	VMK2=172.31.255.3
 
-	VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-	esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'
-	
-Then the **IQN of iSCSI Initiator on ESXi#1 and 2** are output as follows likely. In this sample `iqn.1998-01.com.vmware:localhost:1983516280:65` is IQN of ESXi#1 and `iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65`is IQN of ESXi#2.
+	# IP address of EC#2
+	EC2=172.31.255.12
 
-	iqn.1998-01.com.vmware:localhost:1983516280:65
+	#
+	#----
+	VMHBA=`ssh $VMK1 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	 IQN1=`ssh $VMK1 esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'`
+	VMHBA=`ssh $VMK2 esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
+	 IQN2=`ssh $VMK2 esxcli iscsi adapter get --adapter=$VMHBA | grep '   Name:' | sed -r 's/[^:]*: //'`
 
-	iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65
+	if [ -z "$IQN1" ]; then
+		echo [E] IQN of ESXi1 not found.; exit 1
+	elif [ -z "$IQN2" ]; then
+		echo [E] IQN of ESXi2 not found.; exit 1
+	else
+		echo [D] ESXi1 : $IQN1
+		echo [D] ESXi2 : $IQN2
+	fi
 
-These are used as *IQN of iSCSI Initiator* in the next section to configure iSCSI Target.
+	# Create fileio backstore (*idisk1*) on the mirror disk resource
+	targetcli /backstores/block create name=idisk1 dev=/dev/NMP1
 
-#### Configuring iSCSI Target on **ec1 and 2**
+	# Creating IQN
+	targetcli /iscsi create iqn.1996-10.com.ecx
 
-On ec1, create block backstore and configure it as backstore for the iSCSI Target.
-- Login to the console of ec1
+	# Assigning LUN to IQN
+	targetcli /iscsi/iqn.1996-10.com.ec/tpg1/luns create /backstores/block/idisk1
 
-- Start (iSCSI) target configuration tool
+	# Allow ESXi#1 and 2 (*IQN of iSCSI Initiator*) to scan the iSCSI target
 
-	  # targetcli
+	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN1
+	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN2
 
-- Unset automatic save of the configuration for safe
-
-	  > set global auto_save_on_exit=false
-
-- Create fileio backstore (*idisk*) which have required size on mount point of the mirror disk
-
-	  > cd /backstores/block
-	  > create name=idisk1 dev=/dev/NMP1
-
-- Creating IQN
-
-	  > cd /iscsi
-	  > create iqn.1996-10.com.ecx
-
-- Assigning LUN to IQN
-
-	  > cd /iscsi/iqn.1996-10.com.ec/tpg1/luns
-	  > create /backstores/block/idisk1
-
-- Allow ESXi#1 and 2 (*IQN of iSCSI Initiator* which were obtaind in the previous section) to scan the iSCSI target
-
-	  > cd /iscsi/iqn.1996-10.com.ecx/tpg1/acls
-	  > create iqn.1998-01.com.vmware:localhost:1983516280:65
-	  > create iqn.1998-01.com.vmware:esxi7u2-b1:956052037:65
-
-- Save config and exit
-
-	  > cd /
-	  > saveconfig
-	  > exit
-
-- Copy the saved target configuration to the other node
-
-	  # scp /etc/target/saveconfig.json 172.31.255.12:/etc/target/
+	# Copy the saved target configuration to EC#2
+	scp /etc/target/saveconfig.json $EC2:/etc/target/
 
 ### Connecting ESXi iSCSI Initiator to iSCSI Target
 
