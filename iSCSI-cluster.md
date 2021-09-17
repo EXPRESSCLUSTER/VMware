@@ -486,7 +486,6 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 
 	  #
 	  # The following portion creates new datastore on ECX virtual-iSCSI-shared disk.
-	  # This need to be done on either of ESXi
 	  #
 	
 	  # Finding LIO iSCSI device
