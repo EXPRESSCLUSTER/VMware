@@ -454,7 +454,8 @@ Login to the console of ec1, and issue the following commands. On the execution,
 
 	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN1
 	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN2
-
+	targetcli saveconfig
+	
 	# Copy the saved target configuration to EC#2
 	scp /etc/target/saveconfig.json $EC2:/etc/target/
 
