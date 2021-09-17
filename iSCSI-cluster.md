@@ -215,7 +215,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 - Disabling firewall, SELinux and dnf-makecache
 - Making partitions on vHDD (sdb)
 - Installing EC and its license
-- Making ssh key and configuring password free access from EC VMs to ESXi hosts
+- Making ssh key and configuring password free access from EC VMs to ESXi hosts. On the copying ssh key to ESXi, note that answering 'yes' to the prompt and inputting root password of ESXi#1 and 2 are required.
 
 	  mkdir /media/CentOS
 	  mount /dev/cdrom /media/CentOS
