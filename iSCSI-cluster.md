@@ -224,7 +224,7 @@ Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec
 	  systemctl disable firewalld.service; systemctl disable dnf-makecache.timer
 	  sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
 	  parted -s /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
-	  rpm -ivh expresscls.*.rpm
+	  rpm -ivh expresscls*.rpm
 	  clplcnsc -i ECX4.x-*.key
 
 	  # Configuring SSH
