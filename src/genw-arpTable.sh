@@ -33,7 +33,7 @@ fi
 clpstat --local | grep current | grep $myHostname >/dev/null
 if [ $? -ne 0 ];
 then
-  echo "`date +"%Y/%m/%d %H:%M:%S"`: Failover Gourp is not Active on this server."
+  echo "`date +"%Y/%m/%d %H:%M:%S"`: Failover Group is not Active on this server."
   exit
 fi
 
