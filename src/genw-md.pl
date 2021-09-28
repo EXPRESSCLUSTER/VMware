@@ -4,7 +4,7 @@
 # "RED-Active RED" monitor
 #
 # This provides countermeasure for "RED-Active RED" situation in the MD resource.
-# Issuung the MD force recovery command when the active MD resource gets RED status.
+# Issuing the MD force recovery command when the active MD resource gets RED status.
 #
 
 my $ret = 0;
