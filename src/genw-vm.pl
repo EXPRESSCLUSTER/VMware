@@ -29,7 +29,7 @@ if ($? == 0) {
 	if ($? == 0) {
 		$vmk = $vmk2;
 	} else {
-		&Log("[E] Invalid configuration (Mananegment host IP could not be found).\n");
+		&Log("[E] Invalid configuration (Management host IP could not be found).\n");
 		exit 1;
 	}
 }
