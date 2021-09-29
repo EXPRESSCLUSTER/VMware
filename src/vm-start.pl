@@ -2,8 +2,8 @@
 #
 # Script for power on the Virtual Machine
 #
-# The VM can be in 3 situation before executing this script.
-# 1. The VM is stoped status
+# The VM can be in 3 situations before executing this script.
+# 1. The VM is stopped status
 # 2. The VM is running status
 # 3. The VM is invalid status
 #
@@ -60,7 +60,7 @@ if ($? == 0) {
 		$vmk = $vmk2;
 		$vmhba = $vmhba2;
 	} else {
-		&Log("[E] Invalid configuration (Mananegment host IP could not be found).\n");
+		&Log("[E] Invalid configuration (Management host IP could not be found).\n");
 		exit 1;
 	}
 }
@@ -219,9 +219,9 @@ sub PowerOn{
 		}
 	} else {
 		# Both normal and abnormal cases enter here.
-		# normal case: starting VM which is in stoped state.
+		# normal case: starting VM which is in stopped state.
 		# abnormal case: starting VM which exists as invalid VM.
-		close($fh); 
+		close($fh);
 		&Log(sprintf("[D] \tresult ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 		foreach (@lines) {
 			chomp;
