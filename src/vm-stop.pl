@@ -26,7 +26,7 @@ my $ec2 = "%%EC2%%";
 #-------------------------------------------------------------------------------
 # The interval to check the vm status. (second)
 my $interval = 6;
-# The miximum count to check the vm status.
+# The maximum count to check the vm status.
 my $max_cnt = 50;
 #-------------------------------------------------------------------------------
 # Global values
@@ -49,7 +49,7 @@ if ($? == 0) {
 		$vmk = $vmk2;
 		$vmhba = $vmhba2;
 	} else {
-		&Log("[E] Invalid configuration (Mananegment host IP could not be found).\n");
+		&Log("[E] Invalid configuration (Management host IP could not be found).\n");
 		exit 1;
 	}
 }
@@ -163,8 +163,8 @@ sub WaitPowerOff{
 
 	# There is a case that this script successfully issued "shutdown" for the VM
 	# but the VM got stuck during shutdown.
-	# The VM kept powere-on and retry exceeded $max_cnt then
-	# thsi script failed to unregister the VM.
+	# The VM kept power-on and retry exceeded $max_cnt then
+	# this script failed to unregister the VM.
 	# To avoid such a situation, issuing "off" for the VM here just in case.
 	&Log("[D][WaitPowerOff] [$vmk] issued [off] for [$vmname] just in case.\n");
 	&PowerOffOpMode("off");
