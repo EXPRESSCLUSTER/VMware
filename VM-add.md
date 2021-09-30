@@ -18,7 +18,7 @@ This resource is controlling start/stop VM
 
 - [Add resource] at the right side of [failover-vm]
 - Select [EXEC resource] as [Type] > set `exec-[VMNAME]` as [Name] > [Next]
-- **Uncheck** [Follow the default dependency] > [Next]
+- **Uncheck** [Follow the default dependency] > select `exec-target` > [Add] > [Next]
 
 - [Next]
 - Select start.sh > [Replace] > Select [*vm-start.pl*] > [Open] > [Yes] > [Edit]
