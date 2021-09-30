@@ -21,7 +21,7 @@ This resource is controlling start/stop VM
 - **Uncheck** [Follow the default dependency] > [Next]
 
 - [Next]
-- Select start.sh > [Replace] > Select [*vm-start.pl*] > [Edit]
+- Select start.sh > [Replace] > Select [*vm-start.pl*] > [Open] > [Yes] > [Edit]
 
 	- overwrite `%%VMX%%`       by the path to VM configuration file such as `/vmfs/volumes/EC_iSCSI/vm1/vm1.vmx`
 	- overwrite `%%VMHBA1%%`    by the name of Software iSCSI HBA on ESXi#1 such as `vmhba65`
@@ -33,7 +33,7 @@ This resource is controlling start/stop VM
 	- overwrite `%%EC2%%`       by the IP address of ec2 which have the same network address with %%VMK1%% and %%VMK2%% such as `172.31.255.12`
 	- [OK]
 
-- Select stop.sh > [Replace] > Select [*vm-stop.pl*] > [Edit] just same as start.sh > [OK]
+- Select stop.sh > [Replace] > Select [*vm-stop.pl*] > [Open] > [Yes] > [Edit] just same as start.sh > [OK]
 - [Tuning] > [Maintenance] tab > input */opt/nec/clusterpro/log/exec-[VMNAME].log* as [Log Output Path] such as `/opt/nec/clusterpro/log/exec-VM1.log` > check [Rotate Log] > [OK]
 - [Finish]
 
@@ -43,7 +43,7 @@ This resource is controlling start/stop VM
 - select [Custom monitor] as [Type] > input `genw-[VMNAME]` as [Name] > [Next]
 
 - select [Active] as [Monitor Timing] > [Browse] > select `exec-[VMNAME]` > [OK] > [Next]
-- [Replace] > select [genw-vm.pl] > [Open] > [Edit] > edit the parameter in the script
+- [Replace] > select [genw-vm.pl] > [Open] > [Yes] > [Edit] > edit the parameter in the script
 
 	- overwrite `%%VMX%%`       by the path to VM configuration file such as `/vmfs/volumes/EC_iSCSI/vm1/vm1.vmx`
 	- overwrite `%%VMK1%%`      by the IP address of ESXi#1 such as `172.31.255.2`
@@ -55,4 +55,14 @@ This resource is controlling start/stop VM
 - Input `/opt/nec/clusterpro/log/genw-[VMNAME].log` as [Log Output Path] > check [Rotate Log] > [Next]
 - select [Executing failover to the recovery target] as [Recovery Action] > [Browse] >  select [failover-vm] > [OK] > [Finish]
 
-- [Apply the Configuration File] > [OK] > [OK] > [OK]
+- [Apply the Configuration File] > [OK] > [OK]
+
+# Testing
+
+- Move *failover-vm* from ec1 to ec2
+- Move *failover-vm* from ec2 to ec1
+- Power off ESXi#1 > Wait for completion of the failover 
+- Power on ESXi#1 > Wait for completion of the mirror-recoery
+- Power off ESXi#2 > Wait for completion of the failover
+- Power on ESXi#2 > Wait for completion of the mirror-recoery
+- Power off ESXi#1 and 2 > Power on ESXi#1 and 2 > Wait for completion of starting the target VM
