@@ -366,6 +366,7 @@ This resource is enabling more automated MD recovery by supposing the node which
   - [Info] section
   	- select [Custom monitor] as [Type] > input *genw-remote-node* as [Name]> [Next]
   - [Monitor (common)] section
+  	- select [Always] as [Monitor Timing]
 	- [Next]
   - [Monitor (special)] section
   	- [Replace]
