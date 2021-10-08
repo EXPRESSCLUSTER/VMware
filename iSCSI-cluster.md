@@ -257,7 +257,7 @@ On ec1 and 2 console, confirm the ssh login from ec1 to ESXi#1 and 2 is possible
 
 ### Configuring EC
 
-On ec1, put *exec-md-recovery.pl*, *genw-md.pl*, *genw-remote-node.pl* on the current directory (e.g. `/root`), then run the following commands.
+On ec1, put [*src* directory](src) to the current directory (e.g. `scp -r src root@172.31.255.11:~/`), then run the following commands.
 This makes EC configuration file, copies the scripts to the appropriate directories and edits the script for genw-remote-node, applies the configuration, then reboots ec1 and 2.
 
 **Note** to edit IP addresses for heartbeat and FIP according to the system.
@@ -272,15 +272,18 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	ESX1=172.31.255.2
 	ESX2=172.31.255.3
 
-	# IP addresses of ec1 heartbeat
+	# IP addresses of ec1
+	# IP01 : HB
+	# IP11 : Mirror
+	# IP21 : iSCSI
 	IP01=172.31.255.11
-	IP11=172.31.254.11
-	IP21=172.31.253.11
+	IP11=172.31.253.11
+	IP21=172.31.254.11
 	
-	# IP addresses of ec2 heartbeat
+	# IP addresses of ec2
 	IP02=172.31.255.12
-	IP12=172.31.254.12
-	IP22=172.31.253.12
+	IP12=172.31.253.12
+	IP22=172.31.254.12
 	
 	# FIP
 	FIP=172.31.254.10
@@ -292,21 +295,46 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	/tmp/ec/scripts/monitor.s/genw-md
 	/tmp/ec/scripts/monitor.s/genw-remote-node
 	)
-
 	for d in ${DIRS[@]}; do if [ ! -e ${d} ]; then mkdir -p ${d}; fi; done
-	cp exec-md-recovery.pl /tmp/ec/scripts/failover-vm/exec-md-recovery/start.sh
-	cp genw-md.pl          /tmp/ec/scripts/monitor.s/genw-md/genw.sh
+
+	cp src/genw-md.pl          /tmp/ec/scripts/monitor.s/genw-md/genw.sh
 	f=/tmp/ec/scripts/monitor.s/genw-remote-node/genw.sh
-	cp genw-remote-node.pl $f
+	cp src/genw-remote-node.pl $f
 	sed -i -e 's/%%VMADN1%%/ec1/'   $f
 	sed -i -e 's/%%VMADN2%%/ec2/'   $f
-	sed -i -e 's/%%VMA1%%/${IP01}/' $f
-	sed -i -e 's/%%VMA2%%/${IP02}/' $f
-	sed -i -e 's/%%VMK1%%/${ESX1}/' $f
-	sed -i -e 's/%%VMK2%%/${ESX2}/' $f
+	sed -i -e "s/%%VMA1%%/${IP01}/" $f
+	sed -i -e "s/%%VMA2%%/${IP02}/" $f
+	sed -i -e "s/%%VMK1%%/${ESX1}/" $f
+	sed -i -e "s/%%VMK2%%/${ESX2}/" $f
+
+	# Making start.sh and stop.sh of exec-md-recovery
+
+	cp src/exec-md-recovery.pl /tmp/ec/scripts/failover-vm/exec-md-recovery/start.sh
+	echo '
+	#!/bin/sh -eu
+	echo "Stopped exec-md-recovery"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-md-recovery/stop.sh
+
+	# Making start.sh and stop.sh of exec-iscsi
+
+	echo '
+	#!/bin/sh -eu
+	echo "Starting iSCSI Target"
+	systemctl start target
+	echo "Started  iSCSI Target ($?)"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-iscsi/start.sh
+	echo '
+	#!/bin/sh -eu
+	echo "Stopping iSCSI Target"
+	systemctl stop target
+	echo "Stopped  iSCSI Target ($?)"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-iscsi/stop.sh
 
 	pushd /tmp/ec
-	
+
 	clpcfset create HCI-Cluster ASCII
 	clpcfset add clsparam cluster/heartbeat/timeout 50000
 	clpcfset add srv ec1 0
@@ -314,29 +342,29 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	clpcfset add device ec1 lan 0 $IP01
 	clpcfset add device ec1 lan 1 $IP11
 	clpcfset add device ec1 lan 2 $IP21
-	clpcfset add device ec1 mdc 0 $IP21
+	clpcfset add device ec1 mdc 0 $IP11
 	clpcfset add device ec2 lan 0 $IP02
 	clpcfset add device ec2 lan 1 $IP12
 	clpcfset add device ec2 lan 2 $IP22
-	clpcfset add device ec2 mdc 0 $IP22
+	clpcfset add device ec2 mdc 0 $IP12
 	clpcfset add hb lankhb 0 0
 	clpcfset add hb lankhb 1 1
 	clpcfset add hb lankhb 2 2
-	
+
 	clpcfset add clsparam server@ec1/survive 1
-	
+
 	clpcfset add grp failover failover-vm
-	
+
 	clpcfset add rsc failover-vm fip fip-iscsi
 	clpcfset add rscparam fip fip-iscsi parameters/ip $FIP
-	
+
 	clpcfset add rsc failover-vm exec exec-md-recovery
 	clpcfset add rscparam exec exec-md-recovery parameters/act/path start.sh
 	clpcfset add rscparam exec exec-md-recovery parameters/deact/path stop.sh
 	clpcfset add rscparam exec exec-md-recovery parameters/userlog /opt/nec/clusterpro/log/exec-md-recovery.log
 	clpcfset add rscparam exec exec-md-recovery parameters/logrotate/use 1
 	clpcfset add rscdep exec exec-md-recovery fip-iscsi
-	
+
 	clpcfset add rsc failover-vm md md-iscsi
 	clpcfset add rscparam md md-iscsi parameters/netdev@0/priority 0
 	clpcfset add rscparam md md-iscsi parameters/netdev@0/device 0
@@ -348,14 +376,14 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	clpcfset add rscparam md md-iscsi act/timeout 190
 	clpcfset add rscparam md md-iscsi deact/timeout 190
 	clpcfset add rscdep md md-iscsi exec-md-recovery
-	
+
 	clpcfset add rsc failover-vm exec exec-iscsi
 	clpcfset add rscparam exec exec-iscsi parameters/act/path start.sh
 	clpcfset add rscparam exec exec-iscsi parameters/deact/path stop.sh
 	clpcfset add rscparam exec exec-iscsi parameters/userlog /opt/nec/clusterpro/log/exec-iscsi.log
 	clpcfset add rscparam exec exec-iscsi parameters/logrotate/use 1
 	clpcfset add rscdep exec exec-iscsi md-iscsi
-	
+
 	clpcfset add mon genw genw-md
 	clpcfset add monparam genw genw-md parameters/path genw.sh
 	clpcfset add monparam genw genw-md parameters/userlog /opt/nec/clusterpro/log/genw-md.log
@@ -367,7 +395,7 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	clpcfset add monparam genw genw-md emergency/threshold/restart 0
 	clpcfset add monparam genw genw-md emergency/threshold/fo 0
 	clpcfset add monparam genw genw-md firstmonwait 30
-	
+
 	clpcfset add mon genw genw-remote-node
 	clpcfset add monparam genw genw-remote-node parameters/path genw.sh
 	clpcfset add monparam genw genw-remote-node parameters/userlog /opt/nec/clusterpro/log/genw-remote-node.log
@@ -377,33 +405,28 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	clpcfset add monparam genw genw-remote-node relation/name LocalServer
 	clpcfset add monparam genw genw-remote-node emergency/threshold/restart 0
 	clpcfset add monparam genw genw-remote-node emergency/threshold/fo 0
-	
-	clpcfset add mon genw genw-arpTable
-	clpcfset add monparam genw genw-arpTable parameters/path genw.sh
-	clpcfset add monparam genw genw-arpTable parameters/userlog /opt/nec/clusterpro/log/genw-arpTable.log
-	clpcfset add monparam genw genw-arpTable parameters/logrotate/use 1
-	clpcfset add monparam genw genw-arpTable polling/timing 1
-	clpcfset add monparam genw genw-arpTable target fip-iscsi
-	clpcfset add monparam genw genw-arpTable relation/type cls
-	clpcfset add monparam genw genw-arpTable relation/name LocalServer
-	clpcfset add monparam genw genw-arpTable emergency/threshold/restart 0
-	clpcfset add monparam genw genw-arpTable emergency/threshold/fo 0
-	
+
 	clpcfset add mon fipw fipw-iscsi
 	clpcfset add monparam fipw fipw-iscsi target fip-iscsi
 	clpcfset add monparam fipw fipw-iscsi relation/type rsc
 	clpcfset add monparam fipw fipw-iscsi relation/name fip-iscsi
-	
+
+	clpcfset add mon arpw arpw-iscsi
+	clpcfset add monparam arpw arpw-iscsi target fip-iscsi
+	clpcfset add monparam arpw arpw-iscsi parameters/object fip-iscsi
+	clpcfset add monparam arpw arpw-iscsi relation/type rsc
+	clpcfset add monparam arpw arpw-iscsi relation/name fip-iscsi
+
 	clpcfset add mon mdnw mdnw-iscsi
 	clpcfset add monparam mdnw mdnw-iscsi parameters/object md-iscsi
 	clpcfset add monparam mdnw mdnw-iscsi relation/type cls
 	clpcfset add monparam mdnw mdnw-iscsi relation/name LocalServer
-	
+
 	clpcfset add mon mdw mdw-iscsi
 	clpcfset add monparam mdw mdw-iscsi relation/type cls
 	clpcfset add monparam mdw mdw-iscsi relation/name LocalServer
 	clpcfset add monparam mdw mdw-iscsi parameters/object md-iscsi
-	
+
 	clpcfset add mon userw userw
 	clpcfset add monparam userw userw relation/type cls
 	clpcfset add monparam userw userw relation/name LocalServer
