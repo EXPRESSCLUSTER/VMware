@@ -126,7 +126,7 @@ The disk size for the Mirror-disk which will become iSCSI Datastore can be speci
 	  VM_NETWORK_NAME1="VM Network"
 	  VM_NETWORK_NAME2="Mirror_portgroup"
 	  VM_NETWORK_NAME3="iSCSI_portgroup"
-	  VM_GUEST_OS=centos7-64
+	  VM_GUEST_OS=centos8-64
 	  VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
 	  VM_DISK_SIZE1=16G
 	  VM_DISK_SIZE2=500G
