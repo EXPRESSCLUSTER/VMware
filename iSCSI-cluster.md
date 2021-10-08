@@ -25,7 +25,7 @@
 | MD - Cluster Partition		| /dev/sdb1			| <-- |
 | MD - Data Partition			| /dev/sdb2			| <-- |
 | FIP for iSCSI Target			| 172.31.254.10			| <-- |
-| WWN for iSCSI Target			| iqn.1996-10.com.ec		| <-- |
+| WWN for iSCSI Target			| iqn.1996-10.com.ecx		| <-- |
 
 ## Overall Setup Procedure
 - Creating VMs (ec1 and ec2) on both ESXi, then installing Linux on them.
@@ -36,9 +36,9 @@
 
 ### Creating VMs on both ESXi
 
-Download CetOS iso file and put it on `/vmfs/volumes/datastore1/iso/CentOS-8.2.2004-x86_64-dvd1.iso` of ESXi#1 and #2.
+Download CentOS iso file and put it on `/vmfs/volumes/datastore1/iso/CentOS-8.2.2004-x86_64-dvd1.iso` of ESXi#1 and #2.
 
-Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
+Login to the ESXi shell consoles by Putty/Teraterm > Run the below commands.
 The disk size for the Mirror-disk which will become iSCSI Datastore can be specified as `VM_DISK_SIZE2=500GB` in the commands.
 
 - on esxi1
@@ -189,7 +189,7 @@ The disk size for the Mirror-disk which will become iSCSI Datastore can be speci
 
 Open vSphere Host Client > Boot both EC VMs > Open the consoles of EC VMs > Install CentOS. During the installation, what to be specified are follows. Other things are configured after the installation.
 
-1. "Software Selsection" > "Minimal Install"
+1. "Software Selection" > "Minimal Install"
 2. "Installation Destination" > "16 GiB sda"
 3. Root Password
 
@@ -258,7 +258,7 @@ On ec1 and 2 console, confirm the ssh login from ec1 to ESXi#1 and 2 is possible
 ### Configuring EC
 
 On ec1, put *exec-md-recovery.pl*, *genw-md.pl*, *genw-remote-node.pl* on the current directory (e.g. `/root`), then run the following commands.
-This makes EC configuration file, copis the scripts to the apropriate directories and edits the script for genw-remote-node, applies the configurtion, then reboots ec1 and 2.
+This makes EC configuration file, copies the scripts to the appropriate directories and edits the script for genw-remote-node, applies the configuration, then reboots ec1 and 2.
 
 **Note** to edit IP addresses for heartbeat and FIP according to the system.
 
@@ -421,7 +421,7 @@ Wait for the completion of starting of the cluster *failover-vm*
 
 On ec1, create block backstore on NMP1 and configure it as backstore for the iSCSI Target.
 
-Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP ddress of ESXi#1 and 2.
+Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP address of ESXi#1 and 2.
 
 	#!/bin/sh -eux
 
@@ -512,7 +512,7 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  END_SECTOR=$(eval expr $(partedUtil getptbl /vmfs/devices/disks/${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
 	  echo [D] [$?] END_SECTOR = [${END_SECTOR}]
 
-	  # Createing partition
+	  # Creating partition
 	  partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
 	  echo [D] [$?] partedUtil
 
