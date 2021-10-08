@@ -1,11 +1,11 @@
 # VMware Host Clustering
 
-Configur an HA Cluster of Hypervisor to protect VMs running on VMware.
+Configure an HA Cluster of Hypervisor to protect VMs running on VMware.
 
 ## Architecture
 
-- ECX of data mirroring configuration provides virtual shared disk for ECXi boxes by iSCSI Target clustering.
-- ECX protects VMs on ESXi, means start / stop / monitor and realizing failover of VMs across ECXi boxes.
+- ECX of data mirroring configuration provides virtual shared disk for ESXi boxes by iSCSI Target clustering.
+- ECX protects VMs on ESXi, means start / stop / monitor and realizing failover of VMs across ESXi boxes.
 
 	![Architecture](vmware-cluster-architecture.png)
 
@@ -40,7 +40,7 @@ Add a new datastore and give it a common name across the ESXi boxes (*datastore1
 
 - On vSphere Host Client for both ESXi,
   - [Storage] in [Navigator] pane > [Datastores] tab > [New datastore]
-    - Select [Create new VMFS datastore] > [Next] > Input [datastore1] as [name] > Select the storege device for VMs.
+    - Select [Create new VMFS datastore] > [Next] > Input [datastore1] as [name] > Select the storage device for VMs.
 
 ## Setting up ESXi - Network
 
@@ -49,7 +49,7 @@ Start ssh service and configure it to start on boot.
 - On vSphere Host Client for both ESXi,
   - [Manage] in [Navigator] pane > [Services] tab
     - [TSM-SSH] > [Actions] > [Start]
-    - [TSM-SSH] > [Actions] > [Polilcy] > [Start and stop with host]
+    - [TSM-SSH] > [Actions] > [Policy] > [Start and stop with host]
 
 Configure NTP servers
 
@@ -58,11 +58,11 @@ Configure NTP servers
     - [Time and date] > [Edit settings]
       - Select [Use Network Time Protocol (enable NTP client)] > Select [Start and stop with host] as [NTP service startup policy] > input IP address of NTP server for the configuring environment as [NTP servers]
 
-Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as descrived in the Network picture in above.
+Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as described in the Network picture in above.
 
 - Open putty/teraterm and connect to ESXi#1 (172.31.255.2) and ESXi#2 (172.31.255.3) then issue the below commands for both ESXi to do the followings.
   - Configure vSwitch, Physical NICs, Port groups.
-  - Disable TSO (TCP Segmentation Offload), LRO (Large Receive Offload) and ATS (Atimic Test and Set) for the case of low iSCSI performance.
+  - Disable TSO (TCP Segmentation Offload), LRO (Large Receive Offload) and ATS (Atomic Test and Set) for the case of low iSCSI performance.
   - Configure ESXi to suppress the warning for disabling SSH on vSphere Host Client.
 
 	    #!/bin/sh -ue
