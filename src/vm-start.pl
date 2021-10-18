@@ -136,15 +136,14 @@ sub StorageReady {
 		}
 	}
 	if($device eq ""){
-		&Log("[E][StorageReady] datastore [$datastore] not found\n");
+		&Log("[W][StorageReady] datastore [$datastore] not found\n");
 		&execution("ssh $vmk esxcli storage core adapter rescan --adapter $vmhba");
-		return 0;
 	}
 	if(&execution("ssh $vmk esxcli storage core path list -d $device | grep \"State\: active\"")){
-		&Log("[E][StorageReady] datastore [$datastore] state not found\n");
+		&Log("[W][StorageReady] datastore [$datastore] state not found\n");
 		return 1;
 	} else {
-		&Log("[E][StorageReady] datastore [$datastore] state found\n");
+		&Log("[D][StorageReady] datastore [$datastore] state found\n");
 	}
 	return 0;
 }
