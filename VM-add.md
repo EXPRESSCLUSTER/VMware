@@ -66,9 +66,9 @@ Move
 
 Power
 - Power off ESXi#1 > Wait for completion of the failover 
-- Power on ESXi#1 > Wait for completion of the mirror-recoery
+- Power on ESXi#1 > Wait for completion of the mirror-recovery
 - Power off ESXi#2 > Wait for completion of the failover
-- Power on ESXi#2 > Wait for completion of the mirror-recoery
+- Power on ESXi#2 > Wait for completion of the mirror-recovery
 - Power off ESXi#1 and 2 > Power on ESXi#1 and 2 > Wait for completion of starting the target VM
 
 NP
