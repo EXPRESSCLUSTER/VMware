@@ -59,10 +59,29 @@ This resource is controlling start/stop VM
 
 # Testing
 
+Move
 - Move *failover-vm* from ec1 to ec2
 - Move *failover-vm* from ec2 to ec1
+
+
+Power
 - Power off ESXi#1 > Wait for completion of the failover 
 - Power on ESXi#1 > Wait for completion of the mirror-recoery
 - Power off ESXi#2 > Wait for completion of the failover
 - Power on ESXi#2 > Wait for completion of the mirror-recoery
 - Power off ESXi#1 and 2 > Power on ESXi#1 and 2 > Wait for completion of starting the target VM
+
+NP
+- case 1
+  1. Disconnect all network from ESXi#1  >  Getting into dual active ( ESXi#2 starts the target VM )
+  2. Connect all network of ESXi#1  >  On dual active detection, ec2 suicides without stopping the target VM on ESXi#2 > genw-remote-node on ec1 starts ec2 > The target VM on ESXi#2 lose Lock Protection for .vmdk then getting into invalid status on vSphere Host Client.
+  3. To clear the invalid status, unregister it on vSphere Host Client. In other way, moving failover-vm to ec2 also clear the invalid VM.
+
+- case 2
+  1. Disconnect all network from ec1
+
+- case 3
+  1. Disconnect all network from ESXi#2
+
+- case4
+  1. Disconnect all network from ec2
