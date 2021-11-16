@@ -73,12 +73,26 @@ Power
 
 NP
 - case 1
-  1. Disconnect all network from ESXi#1  >  Getting into dual active ( ESXi#2 starts the target VM )
-  2. Connect all network of ESXi#1  >  On dual active detection, ec2 suicides without stopping the target VM on ESXi#2 > genw-remote-node on ec1 starts ec2 > The target VM on ESXi#2 lose Lock Protection for .vmdk then getting into invalid status on vSphere Host Client.
-  3. To clear the invalid status, unregister it on vSphere Host Client. In other way, moving failover-vm to ec2 also clear the invalid VM.
+
+	1. Disconnect all network from ESXi#1  >  ec2 detects HBTO and starts FOG, and getting into dual active.
+
+		In this situation,
+		- **ESXi#1** uses iSCSI Target provided from **ec1** and has running target VM.
+		- **ESXi#2** uses iSCSI Target provided from **ec2** and has running target VM.
+
+	2. Connect all network of ESXi#1  >  On dual active detection, ec2 suicides without stopping the target VM on ESXi#2  >  ESXi#2 lost iSCSI Target on ec2 and get to use iSCSI Target on ec1 > The target VM on ESXi#2 loses Lock Protection for the .vmdk, and gets into *invalid* status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
+
+	3. On vSphere Host Client connecting to ESXi#2, unregister the target VM to clear the invalid status. In other way, moving failover-vm to ec2 also clear the invalid VM.
 
 - case 2
-  1. Disconnect all network from ec1
+
+	1. Disconnect all network from ec1  >  ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target are succeeded but the target VM is failed to start.
+
+		In this situation,
+		- **ESXi#1** uses iSCSI Target provided from **ec2** and has running target VM and owns Lock Protection for the .vmdk.
+		- **ESXi#2** uses iSCSI Target provided from **ec2** and does not have target VM.
+
+	2. Connect all network of ec1  >  ec2 suicides on dual active detection.
 
 - case 3
   1. Disconnect all network from ESXi#2
