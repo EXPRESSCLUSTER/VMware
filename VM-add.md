@@ -86,13 +86,13 @@ NP
 
 - case 2
 
-	1. Disconnect all network from ec1  >  ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target are succeeded but the target VM is failed to start.
+	1. Disconnect all network from ec1  >  ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target and adding the target VM into the ESXi#2 inventory are succeeded but the target VM is failed to start.
 
 		In this situation,
 		- **ESXi#1** uses iSCSI Target provided from **ec2** and has running target VM and owns Lock Protection for the .vmdk.
-		- **ESXi#2** uses iSCSI Target provided from **ec2** and does not have target VM.
+		- **ESXi#2** uses iSCSI Target provided from **ec2** and does not have running target VM.
 
-	2. Connect all network of ec1  >  ec2 suicides on dual active detection.
+	2. Connect all network of ec1  >  ec2 suicides on dual active detection > ESXi#2 gets to use iSCSI Target on **ec1** > the target VM on ESXi#2 become *Invalid* then *Normal* and *Powered off" status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
 
 - case 3
   1. Disconnect all network from ESXi#2
