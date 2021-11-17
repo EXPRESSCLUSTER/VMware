@@ -255,6 +255,11 @@ On ec1 and 2 console, confirm the ssh login from ec1 to ESXi#1 and 2 is possible
 	ssh 172.31.255.2
 	ssh 172.31.255.3
 
+----
+On ec1 and 2 console, updte Linux kernel to the last release of CentOS 8.2 (kernel-4.18.0-193.28.1.el8_2.x86_64) as far as possible. Because *LIO iSCSI Target* in the Linux kernel of initial CentOS 8.2 (kernel-4.19.0-193.el8_2.x86.64) tend to stall on heavy disk I/O like OS installation to a VM.
+
+----
+
 ### Configuring EC
 
 On ec1, put [*src* directory](src) to the current directory (e.g. `scp -r src root@172.31.255.11:~/`), then run the following commands.
