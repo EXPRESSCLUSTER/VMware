@@ -72,30 +72,48 @@ Power
 - Power off ESXi#1 and 2 > Power on ESXi#1 and 2 > Wait for completion of starting the target VM
 
 NP
-- case 1
 
-	1. Disconnect all network from ESXi#1  >  ec2 detects HBTO and starts FOG, and getting into dual active.
+1. Disconnect all network from ESXi#1 (or #2)  >  ec2 detects HBTO and starts FOG, and getting into dual active.
 
-		In this situation,
-		- **ESXi#1** uses iSCSI Target provided from **ec1** and has running target VM.
-		- **ESXi#2** uses iSCSI Target provided from **ec2** and has running target VM.
+	In this situation,
+	- **ESXi#1** uses iSCSI Target provided from **ec1** and has running target VM.
+	- **ESXi#2** uses iSCSI Target provided from **ec2** and has running target VM.
 
-	2. Connect all network of ESXi#1  >  On dual active detection, ec2 suicides without stopping the target VM on ESXi#2  >  ESXi#2 lost iSCSI Target on ec2 and get to use iSCSI Target on ec1 > The target VM on ESXi#2 loses Lock Protection for the .vmdk, and gets into *invalid* status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
+2. Connect all network of ESXi#1  >  On dual active detection, ec2 suicides without stopping the target VM on ESXi#2  >  ESXi#2 lost iSCSI Target on ec2 and get to use iSCSI Target on ec1 > The target VM on ESXi#2 loses Lock Protection for the .vmdk, and gets into *invalid* status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
 
-	3. On vSphere Host Client connecting to ESXi#2, unregister the target VM to clear the invalid status. In other way, moving failover-vm to ec2 also clear the invalid VM.
+3. On vSphere Host Client connecting to ESXi#2, unregister the target VM to clear the invalid status. In other way, moving failover-vm to ec2 also clear the invalid VM.
+
+<!--
 
 - case 2
 
-	1. Disconnect all network from ec1  >  ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target and adding the target VM into the ESXi#2 inventory are succeeded but the target VM is failed to start.
+	1. Disconnect all network from ec1  >  ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target and adding the target VM into the ESXi#2 inventory complete successfully, but the target VM is failed to start because the Lock Protection forthe .vmdk by ESX#1.
 
 		In this situation,
 		- **ESXi#1** uses iSCSI Target provided from **ec2** and has running target VM and owns Lock Protection for the .vmdk.
 		- **ESXi#2** uses iSCSI Target provided from **ec2** and does not have running target VM.
 
-	2. Connect all network of ec1  >  ec2 suicides on dual active detection > ESXi#2 gets to use iSCSI Target on **ec1** > the target VM on ESXi#2 become *Invalid* then *Normal* and *Powered off" status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
+	2. Connect all network of ec1  >  ec2 suicides on dual active detection > ESXi#2 becomes to use iSCSI Target on **ec1** > the target VM on ESXi#2 become *Invalid*, *Normal* then *Powered off" status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
 
 - case 3
-  1. Disconnect all network from ESXi#2
 
-- case4
-  1. Disconnect all network from ec2
+	Just same as case 1
+
+- case4 (with Witness)
+
+	1. ec2 の全NW接続先を NP用 vSwitch に変更する > ec2 は NP検出で自殺 > 
+	ec1	の genw-remote-node が ec2 を power on, 以降 genw-remote-node は ec2 が online, ec2上の CLP が offline に見えるので、clpcl でクラスタ起動を試み続ける > 
+	ec2	は ec1 に起動されるも、ec1、Witness と通信できず CLP の起動を断念する。
+
+	2. ec2 の全NWの接続先を元に戻す > 
+	ec1	genw-remote-node が ec2 の CLP を起動する。mdw がミラーリカバリを行い 元の状態に戻る。
+
+	3. ec1 で group move をしようとすると、exec-iscsi 停止失敗 > ESD > ec2 FO 実行 となる。停止失敗の原因は systemctrl stop target.service を実行が完了しないからだが、その過程で iSCSI の target portal へのログイン試行が失敗する旨のログ (kerne: Unable to locate Target Portal Group on iqn.1996-10.com.ecx) が exec-iscsi 非活性失敗 ESD まで messages に繰り返し記録される状況が起こる。
+
+		具体的なログサンプルは以下の通り
+		```
+		Nov 22 01:01:29 ec1 kernel: Unable to locate Target Portal Group on iqn.1996-10.com.ecx
+		Nov 22 01:01:29 ec1 kernel: iSCSI Login negotiation failed.
+		```
+
+-->
