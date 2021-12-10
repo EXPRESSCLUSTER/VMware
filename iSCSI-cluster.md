@@ -451,6 +451,8 @@ On ec1, create block backstore on NMP1 and configure it as backstore for the iSC
 
 Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP address of ESXi#1 and 2.
 
+On the last part of the execution, answer *yes* and enter the password for *ec2* to copy *saveconfig.json* from *ec1* to *ec2*
+
 	#!/bin/sh -eux
 
 	# Parameters
