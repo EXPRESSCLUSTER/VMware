@@ -10,14 +10,14 @@ Edit `/etc/yum.repos.d/CentOS-Vault.repo` as below.
 	gpgcheck=1
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
 	enabled=1
-	
+
 	[C8.2-AppStream]
 	name=CentOS-8.2-Updates
 	baseurl=http://vault.centos.org/8.2.2004/AppStream/$basearch/os/
 	gpgcheck=1
 	gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
 	enabled=1
-	
+
 	[C8.2-extras]
 	name=CentOS-8.2-Extras
 	baseurl=http://vault.centos.org/8.2.2004/extras/$basearch/os/

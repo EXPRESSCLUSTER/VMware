@@ -9,7 +9,7 @@
 
 |Virtual HW	|Number, Amount	|
 |:--		|:---		|
-| vCPU		|  4 CPU	| 
+| vCPU		|  4 CPU	|
 | Memory	| 16 GB 	|
 | vNIC		|  3 ports	|
 | vHDD		| 16 GB for OS<br>500 GB for Mirror-disk	|
@@ -270,7 +270,7 @@ This makes EC configuration file, copies the scripts to the appropriate director
 **Note** on issuing the reboot command to ec2, it is requried that answering 'yes' to the prompt and inputting root password of ec2.
 
 	#!/bin/sh -xue
-	
+
 	# Parameters
 	#-------
 	# IP addresses of ESXi#1 and 2
@@ -284,12 +284,12 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	IP01=172.31.255.11
 	IP11=172.31.253.11
 	IP21=172.31.254.11
-	
+
 	# IP addresses of ec2
 	IP02=172.31.255.12
 	IP12=172.31.253.12
 	IP22=172.31.254.12
-	
+
 	# FIP
 	FIP=172.31.254.10
 	#-------
@@ -439,7 +439,7 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	clpcfctrl --push -l -x .
 	popd
 
-	read -p "Hit enter to reboot ec2 then ec1. Answer ec2 root password." 
+	read -p "Hit enter to reboot ec2 then ec1. Answer ec2 root password."
 	ssh %IP02 reboot
 	reboot
 
@@ -493,7 +493,7 @@ On the last part of the execution, answer *yes* and enter the password for *ec2*
 	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN1
 	targetcli /iscsi/iqn.1996-10.com.ecx/tpg1/acls create $IQN2
 	targetcli saveconfig
-	
+
 	# Copy the saved target configuration to EC#2
 	scp /etc/target/saveconfig.json $EC2:/etc/target/
 
@@ -518,7 +518,7 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
 	  echo [D] [$?] VMHBA = [${VMHBA}]
 
-	  # Discovering iSCSI Target 
+	  # Discovering iSCSI Target
 	  esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
 	  echo [D] [$?] esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
 
@@ -533,7 +533,7 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  #
 	  # Formatting and creating new datastore EC_iSCSI on ECX virtual-iSCSI-shared disk.
 	  #
-	
+
 	  # Finding LIO iSCSI device
 	  DEVICE=`esxcli storage core device list | grep "Display Name: LIO-ORG" | sed -r 's/^.*\((.*)\)/\1/'`
 	  echo [D] [$?] DEVICE = [${DEVICE}]

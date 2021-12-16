@@ -65,7 +65,7 @@ Move
 
 
 Power
-- Power off ESXi#1 > Wait for completion of the failover 
+- Power off ESXi#1 > Wait for completion of the failover
 - Power on ESXi#1 > Wait for completion of the mirror-recovery
 - Power off ESXi#2 > Wait for completion of the failover
 - Power on ESXi#2 > Wait for completion of the mirror-recovery
@@ -83,13 +83,13 @@ NP
 		- **ESXi#2** uses iSCSI Target provided from **ec2** and has running target VM.
 
 	2. Connect all network of ESXi#1  
-	 On dual active detection, ec2 suicides without stopping the target VM on ESXi#2  >  ESXi#2 lost iSCSI Target on ec2 and get to use iSCSI Target on ec1 > The target VM on ESXi#2 loses Lock Protection for the .vmdk, and gets into *invalid* status on vSphere Host Client > genw-remote-node on ec1 starts ec2 
+	 On dual active detection, ec2 suicides without stopping the target VM on ESXi#2  >  ESXi#2 lost iSCSI Target on ec2 and get to use iSCSI Target on ec1 > The target VM on ESXi#2 loses Lock Protection for the .vmdk, and gets into *invalid* status on vSphere Host Client > genw-remote-node on ec1 starts ec2
 
 	3. On vSphere Host Client connecting to ESXi#2, unregister the target VM to clear the invalid status. In other way, moving failover-vm to ec2 also clear the invalid VM.
 
 - case 2
 
-	1. Disconnect all network from ec1
+	1. Disconnect all network from ec1  
 	ec2 detects HBTO and starts FOG. FIP, MD, iSCSI Target and adding the target VM into the ESXi#2 inventory complete successfully, but the target VM is failed to start because the Lock Protection forthe .vmdk by ESX#1.
 
 		In this situation,
@@ -119,7 +119,7 @@ NP
 	(*) Due to an issue in *LIO iSCSI Target*, stopping exec-iscsi on ec1 delayed, timeout then ESD >  
 	ec2 executes FO (FailOver) >  ec2 (genw-remote-node) starts ec1 > ec1 returns to the cluster
 
-		(*) The cause of the stop failure of exec-iscsi is that the execution of `systemctrl stop target.service` is not completed. 
+		(*) The cause of the stop failure of exec-iscsi is that the execution of `systemctrl stop target.service` is not completed.
 		In the process, the log that the login attempt to the iSCSI target portal fails is repeatedly recorded in `/var/log/messages` until ESD by the failure of stopping exec-iscsi.
 
 		The specific log sample is as follows
