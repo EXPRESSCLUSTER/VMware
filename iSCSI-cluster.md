@@ -25,7 +25,7 @@
 | MD - Cluster Partition		| /dev/sdb1			| <-- |
 | MD - Data Partition			| /dev/sdb2			| <-- |
 | FIP for iSCSI Target			| 172.31.254.10			| <-- |
-| WWN for iSCSI Target			| iqn.1996-10.com.ec		| <-- |
+| WWN for iSCSI Target			| iqn.1996-10.com.ecx		| <-- |
 
 ## Overall Setup Procedure
 - Creating VMs (ec1 and ec2) on both ESXi, then installing Linux on them.
@@ -36,9 +36,9 @@
 
 ### Creating VMs on both ESXi
 
-Download CetOS iso file and put it on `/vmfs/volumes/datastore1/iso/CentOS-8.2.2004-x86_64-dvd1.iso` of ESXi#1 and #2.
+Download CentOS iso file and put it on `/vmfs/volumes/datastore1/iso/CentOS-8.2.2004-x86_64-dvd1.iso` of ESXi#1 and #2.
 
-Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
+Login to the ESXi shell consoles by Putty/Teraterm > Run the below commands.
 The disk size for the Mirror-disk which will become iSCSI Datastore can be specified as `VM_DISK_SIZE2=500GB` in the commands.
 
 - on esxi1
@@ -126,7 +126,7 @@ The disk size for the Mirror-disk which will become iSCSI Datastore can be speci
 	  VM_NETWORK_NAME1="VM Network"
 	  VM_NETWORK_NAME2="Mirror_portgroup"
 	  VM_NETWORK_NAME3="iSCSI_portgroup"
-	  VM_GUEST_OS=centos7-64
+	  VM_GUEST_OS=centos8-64
 	  VM_CDROM_DEVICETYPE=cdrom-image  # cdrom-image / atapi-cdrom
 	  VM_DISK_SIZE1=16G
 	  VM_DISK_SIZE2=500G
@@ -187,11 +187,11 @@ The disk size for the Mirror-disk which will become iSCSI Datastore can be speci
 
 ### Installing and configuring OS on both EC VMs
 
-Open vSphere Host Client > Boot both EC VMs > Open the consoles of EC VMs > Install CentOS. During the installation, what to be specified are follows. Other things will be configured after the installation.
+Open vSphere Host Client > Boot both EC VMs > Open the consoles of EC VMs > Install CentOS. During the installation, what to be specified are follows. Other things are configured after the installation.
 
-- "Installation Destination" > "16 GiB sda"
-- "Software Selsection" > "Minimal Install"
-- Root Password
+1. "Software Selection" > "Minimal Install"
+2. "Installation Destination" > "16 GiB sda"
+3. Root Password
 
 After the completion of reboot at the end of the CentOS installation, Login to EC VMs, then issue the below commands to set hostname and IP address.
 
@@ -209,30 +209,41 @@ After the completion of reboot at the end of the CentOS installation, Login to E
 	  nmcli c m ens224 ipv4.method manual ipv4.addresses 172.31.253.12/24 connection.autoconnect yes
 	  nmcli c m ens256 ipv4.method manual ipv4.addresses 172.31.254.12/24 connection.autoconnect yes
 
-Put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on `/root` of ec1 and ec2, then issue the below commands on both ec1 and 2 for doing the followings.
+On ec1 and 2, put ECX rpm file and license files (name them ECX4.x-[A-Z].key) on the current directory (e.g. `/root`), then issue the below commands.
 
-- Installing required packages
-- Disabling firewall, SELinux and dnf-makecache
-- Making partitions on vHDD (sdb)
-- Installing EC and its license
-- Making ssh key and configuring password free access from EC VMs to ESXi hosts. On the copying ssh key to ESXi, note that answering 'yes' to the prompt and inputting root password of ESXi#1 and 2 are required.
+**Note** on the copying ssh key to ESXi, answering 'yes' to the prompt and inputting root password of ESXi#1 and 2 are required.
 
-	  mkdir /media/CentOS
-	  mount /dev/cdrom /media/CentOS
-	  yum --disablerepo=* --enablerepo=c8-media-BaseOS,c8-media-AppStream install -y targetcli target-restore perl
-	  umount /media/CentOS
-	  systemctl disable firewalld.service; systemctl disable dnf-makecache.timer
-	  sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
-	  parted -s /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
-	  rpm -ivh expresscls*.rpm
-	  clplcnsc -i ECX4.x-*.key
+	#!/bin/sh -eux
 
-	  # Configuring SSH
-	  yes no | ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
-	  scp ~/.ssh/id_rsa.pub 172.31.255.2:/etc/ssh/keys-root/$HOSTNAME
-	  scp ~/.ssh/id_rsa.pub 172.31.255.3:/etc/ssh/keys-root/$HOSTNAME
+	# Mount CentOS DVD
+	mkdir /media/CentOS
+	mount /dev/cdrom /media/CentOS
 
-	  reboot
+	# Installing required packages
+	yum --disablerepo=* --enablerepo=c8-media-BaseOS,c8-media-AppStream install -y targetcli target-restore perl
+	umount /media/CentOS
+
+	# Disabling firewall, SELinux and dnf-makecache
+	systemctl disable firewalld.service; systemctl disable dnf-makecache.timer
+	sed -i -e 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config
+
+	# Making partitions on vHDD (sdb)
+	parted -s /dev/sdb mklabel msdos mkpart primary 0% 1025MiB mkpart primary 1025MiB 100%
+
+	# Installing EC and its license
+	rpm -ivh expresscls*.rpm
+	clplcnsc -i ECX4.x-*.key
+
+	# Configuring SSH
+	# Making ssh key and configuring password free access from
+	# EC VMs to ESXi hosts. Note, on the copying ssh key to ESXi,
+	# answering 'yes' to the prompt and inputting root password
+	# of ESXi#1 and 2 are required.
+	yes no | ssh-keygen -t rsa -f /root/.ssh/id_rsa -N ""
+	scp ~/.ssh/id_rsa.pub 172.31.255.2:/etc/ssh/keys-root/$HOSTNAME
+	scp ~/.ssh/id_rsa.pub 172.31.255.3:/etc/ssh/keys-root/$HOSTNAME
+
+	reboot
 
 On ESX#1 and 2 shell console, issue the following commands to add the ec1 and 2 keys to authorized_keys.
 
@@ -244,179 +255,205 @@ On ec1 and 2 console, confirm the ssh login from ec1 to ESXi#1 and 2 is possible
 	ssh 172.31.255.2
 	ssh 172.31.255.3
 
+----
+On ec1 and 2 console, updte Linux kernel to the last release of CentOS 8.2 (kernel-4.18.0-193.28.1.el8_2.x86_64) as far as possible. Because *LIO iSCSI Target* in the Linux kernel of initial CentOS 8.2 (kernel-4.19.0-193.el8_2.x86.64) tend to stall on heavy disk I/O like OS installation to a VM.
+
+----
+
 ### Configuring EC
 
-On the client PC,
+On ec1, put [*src* directory](src) to the current directory (e.g. `scp -r src root@172.31.255.11:~/`), then run the following commands.
+This makes EC configuration file, copies the scripts to the appropriate directories and edits the script for genw-remote-node, applies the configuration, then reboots ec1 and 2.
 
-- Open Cluster WebUI ( http://172.31.255.11:29003/ )
-- Change to [Config Mode] from [Operation Mode]
-- Configure the cluster which have no failover-group.
+**Note** to edit IP addresses for heartbeat and FIP according to the system.
 
-	- [Cluster generation wizard]
-	- Input *HCI-Cluster* as [Cluster Name], [English] as Language > [Next]
-	- [Add] > input *172.31.255.12* as [Server Name or IP Address] of secondary server > [OK]
-	- Confirm *ec2* was added > [Next]
-	- Configure Interconnect
+**Note** on issuing the reboot command to ec2, it is requried that answering 'yes' to the prompt and inputting root password of ec2.
 
-		| Priority	| MDC	| ec1		| ec2		|
-		|--		|--	|--		|--		|
-		| 1		|	|172.31.255.11	| 172.31.255.12	|
-		| 2		| mdc1	|172.31.253.11	| 172.31.253.12	|
-		| 3		|	|172.31.254.11	| 172.31.254.12	|
+	#!/bin/sh -xue
+	
+	# Parameters
+	#-------
+	# IP addresses of ESXi#1 and 2
+	ESX1=172.31.255.2
+	ESX2=172.31.255.3
 
-	- [Next] > [Next] > [Next] > [Finish] > [Yes]
+	# IP addresses of ec1
+	# IP01 : HB
+	# IP11 : Mirror
+	# IP21 : iSCSI
+	IP01=172.31.255.11
+	IP11=172.31.253.11
+	IP21=172.31.254.11
+	
+	# IP addresses of ec2
+	IP02=172.31.255.12
+	IP12=172.31.253.12
+	IP22=172.31.254.12
+	
+	# FIP
+	FIP=172.31.254.10
+	#-------
 
-#### Changing Heartbeat Timeout value
-- Click [Properties] button of [HCI-Cluster]
-- [Timeout] tab > Set [Timeout] as *50* sec
+	DIRS=(
+	/tmp/ec/scripts/failover-vm/exec-md-recovery
+	/tmp/ec/scripts/failover-vm/exec-iscsi
+	/tmp/ec/scripts/monitor.s/genw-md
+	/tmp/ec/scripts/monitor.s/genw-remote-node
+	)
+	for d in ${DIRS[@]}; do if [ ! -e ${d} ]; then mkdir -p ${d}; fi; done
 
-#### Enabling primary node surviving on the dual-active detection
-- [Recovery] tab > [Detailed Settings] in right hand of [Disable Shutdown When Multi-Failover-Service Detected] 
-- Check [ec1] > [OK]
-- [OK]
+	cp src/genw-md.pl          /tmp/ec/scripts/monitor.s/genw-md/genw.sh
+	f=/tmp/ec/scripts/monitor.s/genw-remote-node/genw.sh
+	cp src/genw-remote-node.pl $f
+	sed -i -e 's/%%VMADN1%%/ec1/'   $f
+	sed -i -e 's/%%VMADN2%%/ec2/'   $f
+	sed -i -e "s/%%VMA1%%/${IP01}/" $f
+	sed -i -e "s/%%VMA2%%/${IP02}/" $f
+	sed -i -e "s/%%VMK1%%/${ESX1}/" $f
+	sed -i -e "s/%%VMK2%%/${ESX2}/" $f
 
-#### Adding the failover-group
-- click [Add group] button of [Groups]
-- Set [Name] as [*failover-vm*] > [Next]
-- [Next]
-- [Next]
-- [Finish]
+	# Making start.sh and stop.sh of exec-md-recovery
 
-#### Adding the EXEC resource for MD recovery automation
+	cp src/exec-md-recovery.pl /tmp/ec/scripts/failover-vm/exec-md-recovery/start.sh
+	echo '
+	#!/bin/sh -eu
+	echo "Stopped exec-md-recovery"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-md-recovery/stop.sh
 
-This resource is enabling more automated MD recovery by supposing the node which the failover group trying to start has latest data than the other node.
+	# Making start.sh and stop.sh of exec-iscsi
 
-- Click [Add resource] button in right side of [failover-vm]
-- Select [EXEC resource] as [Type] > set *exec-md-recovery* as [Name] > [Next]
-- **Uncheck** [Follow the default dependency] > [Next]
-- [Next]
-- Select start.sh then click [Replace] > Select [*exec-md-recovery.pl*]
-- [Tuning] > [Maintenance] tab > input */opt/nec/clusterpro/log/exec-md-recovery.log* as [Log Output Path] > check [Rotate Log] > [OK]
-- [Finish]
+	echo '
+	#!/bin/sh -eu
+	echo "Starting iSCSI Target"
+	systemctl start target
+	echo "Started  iSCSI Target ($?)"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-iscsi/start.sh
+	echo '
+	#!/bin/sh -eu
+	echo "Stopping iSCSI Target"
+	systemctl stop target
+	echo "Stopped  iSCSI Target ($?)"
+	exit 0
+	' > /tmp/ec/scripts/failover-vm/exec-iscsi/stop.sh
 
-#### Adding the MD resource
-- Click [Add resource] button in right side of [failover-vm]
-- Select [Mirror disk resource] as [Type] > set *md1* as [Name] >  [Next]
-- **Uncheck** [Follow the default dependency] > click [exec-md-recovery] > [Add] > [Next]
-- [Next]
-- Set
-	- [none] as [File System] 
-	- */dev/sdb2* as [Data Partition Device Name] 
-	- */dev/sdb1* as [Cluster Partition Device Name]
-- [Finish]
+	pushd /tmp/ec
 
-#### Adding the execute resource for controlling target service
-- Click [Add resource] button in right side of [failover-vm]
-- Select [EXEC resource] as [Type] > set *exec-target* as [Name] > [Next]
-- [Next]
-- [Next]
-- Select start.sh > [Edit]
-  - Change the tail of the script as below.
+	clpcfset create HCI-Cluster ASCII
+	clpcfset add clsparam cluster/heartbeat/timeout 50000
+	clpcfset add srv ec1 0
+	clpcfset add srv ec2 1
+	clpcfset add device ec1 lan 0 $IP01
+	clpcfset add device ec1 lan 1 $IP11
+	clpcfset add device ec1 lan 2 $IP21
+	clpcfset add device ec1 mdc 0 $IP11
+	clpcfset add device ec2 lan 0 $IP02
+	clpcfset add device ec2 lan 1 $IP12
+	clpcfset add device ec2 lan 2 $IP22
+	clpcfset add device ec2 mdc 0 $IP12
+	clpcfset add hb lankhb 0 0
+	clpcfset add hb lankhb 1 1
+	clpcfset add hb lankhb 2 2
 
-		echo "Starting iSCSI Target"
-		systemctl start target
-		echo "Started  iSCSI Target ($?)"
-		exit 0
+	clpcfset add clsparam server@ec1/survive 1
 
-  - [OK]
-- Select stop.sh > [Edit]
-  - Change the tail of the script as below.
+	clpcfset add grp failover failover-vm
 
-		echo "Stopping iSCSI Target"
-		systemctl stop target
-		echo "Stopped  iSCSI Target ($?)"
-		exit 0
+	clpcfset add rsc failover-vm fip fip-iscsi
+	clpcfset add rscparam fip fip-iscsi parameters/ip $FIP
 
-  - [OK]
-- [Tuning] > [Maintenance] tab > input `/opt/nec/clusterpro/log/exec-target.log` as [Log Output Path] > check [Rotate Log] > [OK]
-- [Finish]
+	clpcfset add rsc failover-vm exec exec-md-recovery
+	clpcfset add rscparam exec exec-md-recovery parameters/act/path start.sh
+	clpcfset add rscparam exec exec-md-recovery parameters/deact/path stop.sh
+	clpcfset add rscparam exec exec-md-recovery parameters/userlog /opt/nec/clusterpro/log/exec-md-recovery.log
+	clpcfset add rscparam exec exec-md-recovery parameters/logrotate/use 1
+	clpcfset add rscdep exec exec-md-recovery fip-iscsi
 
-#### Adding floating IP resource for iSCSI Target
-- Click [Add resource] button in right side of [failover-vm]
-- Select [Floating IP resource] as [Type] > set *fip1* as [Name] > [Next]
-- [Next]
-- [Next]
-- Set *172.31.254.10* as [IP Address]
-- Click [Finish]
+	clpcfset add rsc failover-vm md md-iscsi
+	clpcfset add rscparam md md-iscsi parameters/netdev@0/priority 0
+	clpcfset add rscparam md md-iscsi parameters/netdev@0/device 0
+	clpcfset add rscparam md md-iscsi parameters/netdev@0/mdcname mdc1
+	clpcfset add rscparam md md-iscsi parameters/nmppath /dev/NMP1
+	clpcfset add rscparam md md-iscsi parameters/diskdev/dppath /dev/sdb2
+	clpcfset add rscparam md md-iscsi parameters/diskdev/cppath /dev/sdb1
+	clpcfset add rscparam md md-iscsi parameters/fs none
+	clpcfset add rscparam md md-iscsi act/timeout 190
+	clpcfset add rscparam md md-iscsi deact/timeout 190
+	clpcfset add rscdep md md-iscsi exec-md-recovery
 
-#### Adding the first custom monitor resource for automatic MD recovery
-- Click [Add monitor resource] button in right side of [Monitors]
-  - [Info] section
-  	- select [Custom monitor] as [Type] > input *genw-md* as [Name] > [Next]
-  - [Monitor (common)] section
-  	- input *60* as [Wait Time to Start Monitoring]
-  	- select [Active] as [Monitor Timing]
-  	- [Browse] button
-  		- select [md1] > [OK]
-  	- [Next]
-  - [Monitor (special)] section
-  	- [Replace]
-  		- select *genw-md.pl* > [Open] > [Yes]
-  	- input */opt/nec/clusterpro/log/genw-md.log* as [Log Output Path] > check [Rotate Log]
-  	- [Next]
-  - [Recovery Action] section
-  	- select [Execute only the final action] as [Recovery Action]
-  	- [Browse]
-  		- [LocalServer] > [OK]
-  	- [Finish]
+	clpcfset add rsc failover-vm exec exec-iscsi
+	clpcfset add rscparam exec exec-iscsi parameters/act/path start.sh
+	clpcfset add rscparam exec exec-iscsi parameters/deact/path stop.sh
+	clpcfset add rscparam exec exec-iscsi parameters/userlog /opt/nec/clusterpro/log/exec-iscsi.log
+	clpcfset add rscparam exec exec-iscsi parameters/logrotate/use 1
+	clpcfset add rscdep exec exec-iscsi md-iscsi
 
+	clpcfset add mon genw genw-md
+	clpcfset add monparam genw genw-md parameters/path genw.sh
+	clpcfset add monparam genw genw-md parameters/userlog /opt/nec/clusterpro/log/genw-md.log
+	clpcfset add monparam genw genw-md parameters/logrotate/use 1
+	clpcfset add monparam genw genw-md polling/timing 1
+	clpcfset add monparam genw genw-md target md-iscsi
+	clpcfset add monparam genw genw-md relation/type cls
+	clpcfset add monparam genw genw-md relation/name LocalServer
+	clpcfset add monparam genw genw-md emergency/threshold/restart 0
+	clpcfset add monparam genw genw-md emergency/threshold/fo 0
+	clpcfset add monparam genw genw-md firstmonwait 30
 
-#### Adding the second custom monitor resource for keeping remote EC VM and EC as online.
-- Click [Add monitor resource] button in right side of [Monitors]
-  - [Info] section
-  	- select [Custom monitor] as [Type] > input *genw-remote-node* as [Name]> [Next]
-  - [Monitor (common)] section
-  	- select [Always] as [Monitor Timing]
-	- [Next]
-  - [Monitor (special)] section
-  	- [Replace]
-		- select *genw-remote-node.pl* > [Open] > [Yes]
-	- [Edit]
-		- write `$VMNAME1 = "ec1"` as VM name in the esxi1 inventory
-		- write `$VMNAME2 = "ec2"` as VM name in the esxi2 inventory
-		- write `$VMIP1 = "172.31.255.11"` as IP address of ec1
-		- write `$VMIP2 = "172.31.255.12"` as IP address of ec2
-		- write `$VMK1 = "172.31.255.2"` as IP address of esxi1 accessing from ec1
-		- write `$VMK2 = "172.31.255.3"` as IP address of esxi2 accessing from ec2
-		- [OK]
-	- input */opt/nec/clusterpro/log/genw-remote-node.log* as [Log Output Path] > check [Rotate Log] > [Next]
-  - [Recovery Action] section
-  	- select [Execute only the final action] as [Recovery Action]
-	- [Browse]
-		- [LocalServer] > [OK]
-	- select [No operation] as [Final Action] > [Finish]
+	clpcfset add mon genw genw-remote-node
+	clpcfset add monparam genw genw-remote-node parameters/path genw.sh
+	clpcfset add monparam genw genw-remote-node parameters/userlog /opt/nec/clusterpro/log/genw-remote-node.log
+	clpcfset add monparam genw genw-remote-node parameters/logrotate/use 1
+	clpcfset add monparam genw genw-remote-node target md-iscsi
+	clpcfset add monparam genw genw-remote-node relation/type cls
+	clpcfset add monparam genw genw-remote-node relation/name LocalServer
+	clpcfset add monparam genw genw-remote-node emergency/threshold/restart 0
+	clpcfset add monparam genw genw-remote-node emergency/threshold/fo 0
 
-#### Adding the third custom monitor resource for updating arp table
-- Click [Add monitor resource] button in right side of [Monitors]
-  - [Info] section
-  	- select [Custom monitor] as [type] > input *genw-arpTable* as [Name] > [Next]
-  - [Monitor (common)] section
-  	- input *30* as [Interval]
-	- select [Active] as [Monitor Timing]
-	- [Browse] button
-		- select [fip1] > [OK]
-	- [Next]
-  - [Monitor (special)] section
-  	- [Replace]
-		- select *genw-arpTable.sh* > [Open] > [Yes]
-	- input */opt/nec/clusterpro/log/genw-arpTable.log* as [Log Output Path] > check [Rotate Log] > [Next]
-  - [Recovery Action] section
-  	- select [Execute only the final action] as [Recovery Action]
-	- [Browse]
-		- [LocalServer] > [OK]
-	- select [No operation] as [Final Action] > [Finish]
+	clpcfset add mon fipw fipw-iscsi
+	clpcfset add monparam fipw fipw-iscsi target fip-iscsi
+	clpcfset add monparam fipw fipw-iscsi relation/type rsc
+	clpcfset add monparam fipw fipw-iscsi relation/name fip-iscsi
 
-#### Applying the configuration
-- Click [Apply the Configuration File] > [OK] > [OK] > [OK]
-- Reboot ec1, ec2 and wait for the completion of starting of the cluster *failover-vm*
+	clpcfset add mon arpw arpw-iscsi
+	clpcfset add monparam arpw arpw-iscsi target fip-iscsi
+	clpcfset add monparam arpw arpw-iscsi parameters/object fip-iscsi
+	clpcfset add monparam arpw arpw-iscsi relation/type rsc
+	clpcfset add monparam arpw arpw-iscsi relation/name fip-iscsi
+
+	clpcfset add mon mdnw mdnw-iscsi
+	clpcfset add monparam mdnw mdnw-iscsi parameters/object md-iscsi
+	clpcfset add monparam mdnw mdnw-iscsi relation/type cls
+	clpcfset add monparam mdnw mdnw-iscsi relation/name LocalServer
+
+	clpcfset add mon mdw mdw-iscsi
+	clpcfset add monparam mdw mdw-iscsi relation/type cls
+	clpcfset add monparam mdw mdw-iscsi relation/name LocalServer
+	clpcfset add monparam mdw mdw-iscsi parameters/object md-iscsi
+
+	clpcfset add mon userw userw
+	clpcfset add monparam userw userw relation/type cls
+	clpcfset add monparam userw userw relation/name LocalServer
+
+	clpcfctrl --push -l -x .
+	popd
+
+	read -p "Hit enter to reboot ec2 then ec1. Answer ec2 root password." 
+	ssh %IP02 reboot
+	reboot
+
+Wait for the completion of starting of the cluster *failover-vm*
 
 ### Configuring iSCSI Target on **ec1 and 2**
 
 On ec1, create block backstore on NMP1 and configure it as backstore for the iSCSI Target.
 
-Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP ddress of ESXi#1 and 2.
+Login to the console of ec1, and issue the following commands. On the execution, replace the values of VMK1 and 2 with the IP address of ESXi#1 and 2.
 
-	#!/bin/sh -eu
+On the last part of the execution, answer *yes* and enter the password for *ec2* to copy *saveconfig.json* from *ec1* to *ec2*
+
+	#!/bin/sh -eux
 
 	# Parameters
 	# IP address of ESXi#1 and 2
@@ -462,13 +499,17 @@ Login to the console of ec1, and issue the following commands. On the execution,
 
 ### Connecting ESXi iSCSI Initiator to iSCSI Target
 
-This procedure also mount the iSCSI Target as EC_iSCSI datastore and format it with VMFS6 file system.
+This procedure mount the iSCSI Target as EC_iSCSI datastore and format it with VMFS6 file system.
 
 Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 
-- on ESXi#1
+- on ESXi#1 and 2
 
-	  #!/bin/sh -eu
+	  #!/bin/sh -eux
+
+	  #
+	  # Configuring iSCSI Initiator
+	  #
 
 	  # IP Addresss(FIP):Port for iSCSI Target
 	  ADDR='172.31.254.10:3260'
@@ -485,8 +526,12 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  esxcli storage core adapter rescan --adapter=${VMHBA}
 	  echo [D] [$?] esxcli storage core adapter rescan --adapter=${VMHBA}
 
+- On ESXi#1
+
+	  #!/bin/sh -eux
+
 	  #
-	  # The following portion creates new datastore on ECX virtual-iSCSI-shared disk.
+	  # Formatting and creating new datastore EC_iSCSI on ECX virtual-iSCSI-shared disk.
 	  #
 	
 	  # Finding LIO iSCSI device
@@ -497,32 +542,13 @@ Login to the ESXi console shell by Putty/Teraterm > Run the below commands.
 	  END_SECTOR=$(eval expr $(partedUtil getptbl /vmfs/devices/disks/${DEVICE} | tail -1 | awk '{print $1 " \\* " $2 " \\* " $3}') - 1)
 	  echo [D] [$?] END_SECTOR = [${END_SECTOR}]
 
-	  # Createing partition
+	  # Creating partition
 	  partedUtil setptbl "/vmfs/devices/disks/${DEVICE}" "gpt" "1 2048 ${END_SECTOR} AA31E02A400F11DB9590000C2911D1B8 0"
 	  echo [D] [$?] partedUtil
 
 	  # Formatting the partition and mount it as EC_iSCSI datastore
 	  vmkfstools --createfs vmfs6 -S EC_iSCSI /vmfs/devices/disks/${DEVICE}:1
 	  echo [D] [$?] vmkfstools
-
-- On ESXi#2
-
-	  #!/bin/sh -eu
-
-	  # IP Addresss(FIP):Port for iSCSI Target
-	  ADDR='172.31.254.10:3260'
-
-	  # Finding vmhba for iSCSI Software Adapter
-	  VMHBA=`esxcli iscsi adapter list | grep 'iSCSI Software Adapter' | sed -r 's/\s.*iSCSI Software Adapter$//'`
-	  echo [D] [$?] VMHBA = [${VMHBA}]
-
-	  # Discovering iSCSI Target 
-	  esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
-	  echo [D] [$?] esxcli iscsi adapter discovery sendtarget add --address=${ADDR} --adapter=${VMHBA}
-
-	  # Scanning iSCSI Software Adapter
-	  esxcli storage core adapter rescan --adapter=${VMHBA}
-	  echo [D] [$?] esxcli storage core adapter rescan --adapter=${VMHBA}
 
 Reference:
 [[1](https://kb.vmware.com/s/article/1036609)]
