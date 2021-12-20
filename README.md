@@ -83,14 +83,23 @@ Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as described 
 	    esxcfg-vswitch --add-pg=iSCSI_Initiator iSCSI_vswitch
 	    esxcfg-vswitch --add-pg=user_portgroup user_vswitch
 
-	    # Disabling TSO LRO ATS
+	    # Disabling TSO, LRO, T10 WRITE_SAME (Zeroing function for thin provisioning)
 	    esxcli system settings advanced set --option=/Net/UseHwTSO --int-value=0
 	    esxcli system settings advanced set --option=/Net/UseHwTSO6 --int-value=0
 	    esxcli system settings advanced set --option=/Net/TcpipDefLROEnabled --int-value=0
-	    esxcli system settings advanced set --option=/VMFS3/UseATSForHBOnVMFS5 --int-value=0
+	    esxcli system settings advanced set --option=/DataMover/HardwareAcceleratedInit --int-value=0
 
 	    # Suppress shell warning
 	    esxcli system settings advanced set --option=/UserVars/SuppressShellWarning --int-value=1
+
+	----
+	**NOTE:**  
+	LIO iSCSI has a problem in its iplementation of SCSI T10 Block Zeroing command (WRITE_SAME), and so,
+	there is also a problem for supporting VAAI *Zero* function which is used for thin provisioning of VMDK.
+	It is that a heavy I/O to VMFS on LIO iSCSI result to get stuck (e.g. installing OS on a VM, Windows Update, etc.).
+	The workaround in this solution is to disable using *Zero* function on ESXi.
+
+	----
 
 - Configure VMkernel NIC for iSCSI Initiator and enable iSCSI Software Adapter
   - for ESXi#1
