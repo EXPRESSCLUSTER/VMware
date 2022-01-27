@@ -41,8 +41,7 @@ This resource is controlling start/stop VM
 
 - [Add monitor resource] at the right side of [Monitors]
 - select [Custom monitor] as [Type] > input `genw-[VMNAME]` as [Name] > [Next]
-
-- select [Active] as [Monitor Timing] > [Browse] > select `exec-[VMNAME]` > [OK] > [Next]
+- Input `1` as [Retry Count] > select [Active] as [Monitor Timing] > [Browse] > select `exec-[VMNAME]` > [OK] > [Next]
 - [Replace] > select [genw-vm.pl] > [Open] > [Yes] > [Edit] > edit the parameter in the script
 
 	- overwrite `%%VMX%%`       by the path to VM configuration file such as `/vmfs/volumes/EC_iSCSI/vm1/vm1.vmx`
