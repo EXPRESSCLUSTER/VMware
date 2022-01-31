@@ -13,9 +13,7 @@ use strict;
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
-my @cfg_paths = (
-'%%VMX%%'
-);
+my $cfg_paths = '%%VMX%%';
 
 # The HBA name to connect to iSCSI Datastore.
 my $vmhba1 = "%%VMHBA1%%";
@@ -36,15 +34,14 @@ my $ec2 = "%%EC2%%";
 # The interval to check the storage status. (second)
 my $storage_check_interval = 3;
 # The interval to check the vm power status. (second)
-my $interval = 1;
+my $interval = 3;
 # The maximum count to check the vm power status.
-my $max_cnt = 100;
+my $max_cnt = 30;
 # The timeout to power on the vm. (second)
 my $start_to = 10;
 #-------------------------------------------------------------------------------
 # Global values
 my $vmk = "";
-my $cfg_path = "";
 my $vmname = "";
 my $vmid = "";
 my $vmhba = "";
@@ -68,34 +65,23 @@ if ($? == 0) {
 #-------------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------------
-my $r = 0;
-foreach (@cfg_paths){
-	$vmname = $_;
-	$vmname =~ s/.*\/(.*)\/.*\.vmx/$1/;
-	$cfg_path = $_;
-	&Log("[I] [$vmname][$cfg_path]\n");
+$vmname = $cfg_path;
+$vmname =~ s/.*\/(.*)\/.*\.vmx/$1/;
+&Log("[I] Starting [$vmname][$cfg_path]\n");
 
-	if (&PreChk()) {
-		next;
-	}
-	while (&StorageReady()) {
-		sleep $storage_check_interval;
-	}
-	if (&Register()) {
-		if (&Register()) {
-			$r = 1;
-		}
-		next;
-	}
-	if (&PowerOn()) {
-		$r = 1;
-		next;
-	}
-	if (&WaitPowerOn()) {
-		$r = 1;
-	}
+if (&PreChk()) {
+	exit 0;
 }
-exit $r;
+while (&StorageReady()) {
+	sleep $storage_check_interval;
+}
+if (&Register()) {
+	exit 1;
+}
+if (&PowerOn()) {
+	exit 1;
+}
+exit 0;
 #-------------------------------------------------------------------------------
 # Functions
 #-------------------------------------------------------------------------------
@@ -159,34 +145,31 @@ sub Register {
 		if (/^(\d+)$/){
 			$vmid = $1;
 			&Log("[I][Register] [$vmname][$vmid] at [$vmk] registered\n");
-			$ret = 0;
 		}
 		elsif (/msg = \"The specified key, name, or identifier '(\d+)' already exists.\"/) {
 			$vmid = $1;
-			if (&IsRegistered()) {
-				&Log("[I][Register] [$vmname][$vmid] at [$vmk] registered.\n");
-				$ret = 0;
-			} else {
-				# Unregistering the (invalid?) VM.
-				&Log("[I][Register] unregister [$vmname]\n");
-				&execution("ssh $vmk vim-cmd vmsvc/unregister $vmid");
-				$vmid = 0;
-				$ret = 1;
-			}
 		}
+	}
+	if (&IsRegistered()) {
+		&Log("[I][Register] [$vmname][$vmid] at [$vmk] surely registered.\n");
+		$ret = 0;
+	} else {
+		&Log("[E][Register] Not in inventory. Unregistering [$vmid]\n");
+		&execution("ssh $vmk vim-cmd vmsvc/unregister $vmid");
+		$ret = 1;
 	}
 	return $ret;
 }
 #-------------------------------------------------------------------------------
 sub IsRegistered {
-	if (&execution("ssh $vmk vim-cmd vmsvc/getallvms | grep ' $vmname '")) {
-		&Log("[I][IsRegistered] [$vmname] not in inventory.\n");
-		return 0;
+	&execution("ssh $vmk vim-cmd vmsvc/getallvms"); 
+	foreach(@lines){
+		return 1 if(/^\d+\s+$vmname\s+/);
 	}
-	&Log("[I][IsRegistered] [$vmname] in inventory.\n");
-	return 1;
+	return 0;
 }
 #-------------------------------------------------------------------------------
+# Return 0 on successful power.on, resolve-stuck, in-inventory
 sub PowerOn{
 	my $fh;
 	my $ret = 0;
@@ -197,50 +180,52 @@ sub PowerOn{
 	eval{
 		local $SIG{ALRM} = sub { die "timeout" };
 		alarm($start_to);
-
 		@lines = <$fh>;
-
 		alarm(0);
 	};
 	alarm(0);
 	if ($@) {
 		if($@ =~ /timeout/){
+			# Got timeout.
 			kill 'TERM', $pid;
 			close($fh); 
 			&Log(sprintf("[D] \tresult ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
-
-			# Try resolving VM stuck
-			&Log("[E][PowerOn] [$vmname] at [$vmk] could not start: timeout($start_to second)\n");
-			$ret = &ResolveVmStuck();
+			&Log("[W][PowerOn] [$vmname] at [$vmk] timed out ($start_to sec) to start\n");
 		} else {
+			# Got timeout, but no contents of eval exception.
 			&Log("[E][PowerOn] exception: $@\n");
-			$ret = 1;
+			return 1;
 		}
 	} else {
+		# Issuing power.on completes within timeout.
 		# Both normal and abnormal cases enter here.
-		# normal case: starting VM which is in stopped state.
+		# normal case  : starting VM which is still in power-off state.
 		# abnormal case: starting VM which exists as invalid VM.
-		close($fh);
-		&Log(sprintf("[D] \tresult ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 		foreach (@lines) {
 			chomp;
 			&Log("[D] \t: $_\n");
 			if (/^Power on failed/) {
 				$ret = 1;
-			} else {
-				$ret = 0;
 			}
 		}
+		close($fh);
+		&Log(sprintf("[D] \tresult ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 	}
-	return $ret;
+	if($ret){
+		&Log("[E][PowerOn] Failed to issue power-on\n");
+	} else {
+		&Log("[I][PowerOn] Succeeded to issue power-on\n");
+	}
+	return 1 if(&ResolveVmStuck());
+	return &WaitPowerOn
 }
 #-------------------------------------------------------------------------------
+# After RegisterVm spawns Invalid VM and PowerOn of Invalid VM fails,
+# if processing enters here, it gets into the loop of max_cnt times meaninglessly.
+# Therefore, it is important NOT to enter here with an Invalid VM.
+#
 sub WaitPowerOn{
 	for (my $i = 0; $i < $max_cnt; $i++){
-		#
-		# RegisterVm で Invalid VM を生んだ後、Invalid VM の PowerOn が失敗したまま
-		# ここに突入するケースがあると max_cnt 回のループに陥る
-		#
 		if (&IsPoweredOn()) {
 			&Log("[I][WaitPowerOn] [$vmname] power on completed. (cnt=$i)\n");
 			return 0;
@@ -249,6 +234,8 @@ sub WaitPowerOn{
 		sleep $interval;
 	}
 	&Log("[E][WaitPowerOn] [$vmname] powered on not completed. (cnt=$max_cnt)\n");
+	&Log("[D][WaitPowerOn] checking question message\n");
+	&ResolveVmStuck();
 	return 1;
 }
 #-------------------------------------------------------------------------------
@@ -256,7 +243,6 @@ sub IsPoweredOn{
 	&execution("ssh $vmk vim-cmd vmsvc/power.getstate $vmid");
 	foreach (@lines) {
 		if (/Powered on/) {
-			&Log("[D][IsPoweredOn] [$vmname] power state is ON.\n");
 			return 1;
 		}
 	}
@@ -292,9 +278,9 @@ sub execution {
 	@lines = <$h>;
 	foreach (@lines) {
 		chomp;
-		&Log("[D] | $_\n");
+		&Log("[D] \t| $_\n");
 	}
-	close($h); 
+	close($h);
 	&Log(sprintf("[D] \tresult ![%d] ?[%d] >> 8 = [%d]\n", $!, $?, $? >> 8));
 	return $?;
 }
