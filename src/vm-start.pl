@@ -13,7 +13,7 @@ use strict;
 #-------------------------------------------------------------------------------
 # The path to VM configuration file. This must be absolute UUID-based path.
 # like "/vmfs/volumes/<datastore-uuid>/vm1/vm1.vmx";
-my $cfg_paths = '%%VMX%%';
+my $cfg_path = '%%VMX%%';
 
 # The HBA name to connect to iSCSI Datastore.
 my $vmhba1 = "%%VMHBA1%%";
