@@ -92,17 +92,21 @@ Configure vSwitch, Port groups, VMkernel NIC (for iSCSI Initiator) as described 
 	    # Suppress shell warning
 	    esxcli system settings advanced set --option=/UserVars/SuppressShellWarning --int-value=1
 
-- Configure VMkernel NIC for iSCSI Initiator and enable iSCSI Software Adapter
+- Configure VMkernel NIC for iSCSI Initiator, enable iSCSI Software Adapter, and disable Delayed ACK. 
   - for ESXi#1
 
 	    esxcfg-vmknic --add --ip 172.31.254.2 --netmask 255.255.255.0 iSCSI_Initiator
 	    esxcli iscsi software set --enabled=true
+	    VMHBA=`esxcli iscsi adapter list | grep iqn.1998-01.comvmware | awk '{print $1}'`
+	    esxcli iscsi adapter param set -A $VMHBA -k DelayedAck -v false
 	    /etc/init.d/hostd restart
 
   - for ESXi#2
 
 	    esxcfg-vmknic --add --ip 172.31.254.3 --netmask 255.255.255.0 iSCSI_Initiator
 	    esxcli iscsi software set --enabled=true
+	    VMHBA=`esxcli iscsi adapter list | grep iqn.1998-01.comvmware | awk '{print $1}'`
+	    esxcli iscsi adapter param set -A $VMHBA -k DelayedAck -v false
 	    /etc/init.d/hostd restart
 
 Continue to [Setting up iSCSI Target Cluster on VMware](iSCSI-cluster.md)
