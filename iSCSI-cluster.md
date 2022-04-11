@@ -440,7 +440,7 @@ This makes EC configuration file, copies the scripts to the appropriate director
 	popd
 
 	read -p "Hit enter to reboot ec2 then ec1. Answer ec2 root password."
-	ssh %IP02 reboot
+	ssh $IP02 reboot
 	reboot
 
 Wait for the completion of starting of the cluster *failover-vm*
